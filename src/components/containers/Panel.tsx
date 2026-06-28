@@ -5,18 +5,19 @@ import { cn } from "../../lib/cn";
 const panel = cva(`
   border
   border-line
+  shadow-xl
+  shadow-black/30
+  backdrop-blur-2xl
 `, {
   variants: {
     variant: {
       surface: `
         rounded-2xl
-        bg-ebony-2
+        bg-ebony-2/55
       `,
       display: `
         rounded-3xl
-        bg-linear-to-b
-        from-ebony-2
-        to-rosewood
+        bg-ebony-2/45
       `,
     },
   },

@@ -1,24 +1,31 @@
 @import "tailwindcss";
 
 @theme {
-  --color-ebony: #15110d;
-  --color-ebony-2: #1f1812;
-  --color-ebony-3: #271e16;
-  --color-rosewood: #2a1d14;
-  --color-brass: #c79a53;
-  --color-brass-soft: #d9b777;
-  --color-pearl: #efe9db;
-  --color-pearl-dim: #c8bfae;
-  --color-pearl-faint: #8c8273;
-  --color-green: #79cf8c;
-  --color-amber: #e0a03c;
-  --color-clay: #b9774e;
-  --color-line: rgba(239, 233, 219, 0.14);
-  --color-line-soft: rgba(239, 233, 219, 0.08);
+  --color-ebony: #160f08;
+  --color-ebony-2: #2a1f12;
+  --color-ebony-3: #352716;
+  --color-rosewood: #2e1d10;
+  --color-brass: #f0a830;
+  --color-brass-soft: #f6c25a;
+  --color-pearl: #f7ecd9;
+  --color-pearl-dim: #cdb89a;
+  --color-pearl-faint: #94816a;
+  --color-green: #a3d977;
+  --color-amber: #fb923c;
+  --color-clay: #d97742;
+  --color-line: rgba(255, 240, 214, 0.20);
+  --color-line-soft: rgba(255, 240, 214, 0.10);
 
   --font-display: "Fraunces Variable", "Fraunces", Georgia, serif;
   --font-body: "Inter Variable", "Inter", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", monospace;
+
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.25rem;
+  --radius-3xl: 1.5rem;
 
   --animate-fret-pulse: fret-pulse 1.4s ease-out infinite;
 
@@ -45,8 +52,8 @@
     font-family: var(--font-body);
     color: var(--color-pearl);
     background:
-      radial-gradient(1100px 600px at 70% -10%, rgba(199, 154, 83, 0.12), transparent 60%),
-      radial-gradient(900px 700px at -10% 110%, rgba(185, 119, 78, 0.1), transparent 55%),
+      radial-gradient(900px 680px at 88% 4%, rgba(217, 119, 66, 0.32), transparent 60%),
+      radial-gradient(820px 600px at 12% 112%, rgba(240, 168, 48, 0.38), transparent 62%),
       var(--color-ebony);
     -webkit-font-smoothing: antialiased;
   }
