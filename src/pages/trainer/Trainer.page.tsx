@@ -266,7 +266,6 @@ export function Trainer() {
           noteNameRef={noteNameRef}
           isCheckVisible={isCheckVisible}
           isReplayDisabled={currentNote === null || isMuted}
-          isMuted={isMuted}
           onReplay={() => {
             if (currentNote !== null) {
               engine.playReference(frequencyFromMidi(currentNote.midi));

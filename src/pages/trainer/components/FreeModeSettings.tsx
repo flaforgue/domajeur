@@ -1,3 +1,5 @@
+import { InfoIcon } from "lucide-react";
+import { Tooltip } from "react-tooltip";
 import { ToggleSwitch } from "../../../components/inputs/ToggleSwitch";
 
 interface Props {
@@ -24,7 +26,25 @@ export function FreeModeSettings({ isNaturalsOnly, onNaturalsOnlyChange, fretMax
           text-pearl-dim
         `}
       >
-        <span>Frettes max</span>
+        <span
+          className={`
+            flex
+            items-center
+            gap-1
+          `}
+        >
+          Frettes max
+          <InfoIcon
+            width="14"
+            height="14"
+            className={`
+              cursor-help
+              text-pearl-faint
+            `}
+            data-tooltip-id="fret-max-help"
+            data-tooltip-content="Frette la plus haute utilisée pour générer les notes (0 = uniquement les cordes à vide)."
+          />
+        </span>
         <span
           className={`
             flex
@@ -56,6 +76,7 @@ export function FreeModeSettings({ isNaturalsOnly, onNaturalsOnlyChange, fretMax
           </span>
         </span>
       </label>
+      <Tooltip id="fret-max-help" style={{ maxWidth: "16rem" }} />
     </>
   );
 }

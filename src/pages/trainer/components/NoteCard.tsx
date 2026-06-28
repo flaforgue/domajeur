@@ -3,7 +3,6 @@ import type { NoteCandidate } from "../../../lib/music/guitar";
 import { cn } from "../../../lib/cn";
 import { Panel } from "../../../components/containers/Panel";
 import { Button } from "../../../components/buttons/Button";
-import { Tooltip } from "../../../components/overlays/Tooltip";
 import { NoteName } from "./NoteName";
 import { AudioLinesIcon, CheckCheckIcon } from "lucide-react";
 
@@ -14,23 +13,10 @@ interface Props {
   noteNameRef: Ref<HTMLDivElement>;
   isCheckVisible: boolean;
   isReplayDisabled: boolean;
-  isMuted: boolean;
   onReplay: () => void;
 }
 
-export function NoteCard({ note, noteNameRef, isCheckVisible, isReplayDisabled, isMuted, onReplay }: Props) {
-  const replayButton = (
-    <Button
-      variant="icon"
-      aria-label="Réécouter la note"
-      disabled={isReplayDisabled}
-      className={cn(isMuted && "disabled:pointer-events-none")}
-      onClick={onReplay}
-    >
-      <AudioLinesIcon width="20" height="20" />
-    </Button>
-  );
-
+export function NoteCard({ note, noteNameRef, isCheckVisible, isReplayDisabled, onReplay }: Props) {
   return (
     <Panel
       variant="display"
@@ -66,13 +52,14 @@ export function NoteCard({ note, noteNameRef, isCheckVisible, isReplayDisabled, 
           aria-label="Validé"
         />
       )}
-      {isMuted
-        ? (
-          <Tooltip label="Activez le son dans le menu principal" className="cursor-not-allowed">
-            {replayButton}
-          </Tooltip>
-        )
-        : replayButton}
+      <Button
+        variant="icon"
+        aria-label="Réécouter la note"
+        disabled={isReplayDisabled}
+        onClick={onReplay}
+      >
+        <AudioLinesIcon width="20" height="20" />
+      </Button>
     </Panel>
   );
 }

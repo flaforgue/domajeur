@@ -8,7 +8,7 @@ import { Panel } from "../../components/containers/Panel";
 import { PageContainer } from "../../components/layout/PageContainer";
 import { Flex } from "../../components/layout/Flex";
 import { SectionTitle } from "../../components/titles/SectionTitle";
-import { Tooltip } from "../../components/overlays/Tooltip";
+import { EnableSoundPrompt } from "../../components/EnableSoundPrompt";
 
 const minBpm = 40;
 const maxBpm = 240;
@@ -32,8 +32,6 @@ export function Metronome() {
   const controlButton = (
     <Button
       variant="primary"
-      disabled={isMuted}
-      className={cn(isMuted && "disabled:pointer-events-none")}
       onClick={() => {
         if (isRunning) {
           stop();
@@ -151,13 +149,7 @@ export function Metronome() {
           </Button>
         </Flex>
 
-        {isMuted
-          ? (
-            <Tooltip label="Activez le son dans le menu principal" className="cursor-not-allowed">
-              {controlButton}
-            </Tooltip>
-          )
-          : controlButton}
+        {isMuted ? <EnableSoundPrompt /> : controlButton}
       </Panel>
 
       <Flex direction="col" align="center" gap={2.5}>

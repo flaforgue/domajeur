@@ -8,6 +8,8 @@ import { Panel } from "../../../components/containers/Panel";
 import { Flex } from "../../../components/layout/Flex";
 import { Gauge } from "./Gauge";
 import { IN_TUNE_TOLERANCE_CENTS, isInTune } from "../tuning";
+import { EnableSoundPrompt } from "../../../components/EnableSoundPrompt";
+import { useMuted } from "../../../hooks/useMuted";
 
 type TunerView
   = | { kind: "idle" }
@@ -44,6 +46,7 @@ function viewsAreEqual(a: TunerView, b: TunerView): boolean {
 }
 
 export function TunerDisplay() {
+  const [isMuted] = useMuted();
   const [notation] = useNotation();
   const view = useEngineSelector((frame) => computeView(frame, notation), viewsAreEqual);
 
@@ -119,6 +122,8 @@ export function TunerDisplay() {
       >
         {isActive ? `${view.frequency.toFixed(1)} Hz` : ""}
       </div>
+
+      {isMuted && <EnableSoundPrompt />}
     </Panel>
   );
 }

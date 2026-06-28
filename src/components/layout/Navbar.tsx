@@ -1,7 +1,8 @@
 import { GaugeIcon, GuitarIcon, MetronomeIcon } from "lucide-react";
 import { usePitch } from "../../hooks/usePitch";
 import { Flex } from "./Flex";
-import { SettingsMenu } from "./SettingsMenu";
+import { MuteButton } from "./MuteButton";
+import { NotationButton } from "./NotationButton";
 import { NavBarLink } from "./NavBarLink";
 
 export function Navbar() {
@@ -68,7 +69,8 @@ export function Navbar() {
           <MetronomeIcon width="20" height="20" />
           Métronome
         </NavBarLink>
-        <SettingsMenu />
+        <MuteButton />
+        <NotationButton />
       </Flex>
     </nav>
   );

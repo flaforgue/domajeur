@@ -17,7 +17,7 @@ const referenceButton = cn(
   "transition",
   "enabled:hover:text-brass",
   "enabled:hover:border-brass/50",
-  "disabled:pointer-events-none",
+  "disabled:cursor-not-allowed",
   "disabled:opacity-40",
 );
 
