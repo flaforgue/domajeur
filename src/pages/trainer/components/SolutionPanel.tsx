@@ -49,7 +49,11 @@ export function SolutionPanel({ note, altPositions, maxFret }: Props) {
           {altPositions.map((p) => `${stringName(p.stringIndex, notation)} ${fretText(p.fretIndex)}`).join(" · ")}
         </div>
       )}
-      <Fretboard pos={{ stringIndex: note.stringIndex, fretIndex: note.fretIndex }} maxFret={maxFret} />
+      <Fretboard
+        pos={{ stringIndex: note.stringIndex, fretIndex: note.fretIndex }}
+        altPositions={altPositions}
+        maxFret={maxFret}
+      />
     </Panel>
   );
 }

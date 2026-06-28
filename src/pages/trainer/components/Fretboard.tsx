@@ -2,12 +2,13 @@ import type { StringPosition } from "../../../lib/music/guitar";
 
 interface Props {
   pos: StringPosition;
+  altPositions?: StringPosition[];
   maxFret: number;
 }
 
 const stringCount = 6;
 
-export function Fretboard({ pos, maxFret }: Props) {
+export function Fretboard({ pos, altPositions = [], maxFret }: Props) {
   const frets = Math.max(5, maxFret);
   const paddingLeft = 34;
   const paddingRight = 18;
@@ -19,8 +20,8 @@ export function Fretboard({ pos, maxFret }: Props) {
 
   const stringY = (i: number) => paddingVertical + (stringCount - 1 - i) * rowGap;
   const fretX = (f: number) => paddingLeft + f * fretGap;
-  const dotX = pos.fretIndex === 0 ? paddingLeft - 16 : fretX(pos.fretIndex) - fretGap / 2;
-  const dotY = stringY(pos.stringIndex);
+  const markerX = (p: StringPosition) => (p.fretIndex === 0 ? paddingLeft - 16 : fretX(p.fretIndex) - fretGap / 2);
+  const markerY = (p: StringPosition) => stringY(p.stringIndex);
 
   return (
     <svg
@@ -86,15 +87,28 @@ export function Fretboard({ pos, maxFret }: Props) {
           {f}
         </text>
       ))}
+      {altPositions.map((altPosition) => (
+        <circle
+          key={`alt-${altPosition.stringIndex}-${altPosition.fretIndex}`}
+          cx={markerX(altPosition)}
+          cy={markerY(altPosition)}
+          r={7}
+          strokeWidth={1.5}
+          className={`
+            fill-brass/20
+            stroke-brass/55
+          `}
+        />
+      ))}
       <circle
-        cx={dotX}
-        cy={dotY}
+        cx={markerX(pos)}
+        cy={markerY(pos)}
         r={9}
         className="fill-brass"
       />
       <circle
-        cx={dotX}
-        cy={dotY}
+        cx={markerX(pos)}
+        cy={markerY(pos)}
         r={9}
         className={`
           origin-center
