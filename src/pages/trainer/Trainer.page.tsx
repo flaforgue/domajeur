@@ -1,6 +1,7 @@
 import { useEffect, useReducer, useRef, useState } from "react";
 import { usePitch } from "../../hooks/usePitch";
 import { useMuted } from "../../hooks/useMuted";
+import { useSpacebar } from "../../hooks/useSpacebar";
 import { frequencyFromMidi } from "../../lib/music/notation";
 import { randomNote, stringPositionsForMidi, type NoteCandidate } from "../../lib/music/guitar";
 import { Confetti, type ConfettiHandle } from "../../components/effects/Confetti";
@@ -47,6 +48,12 @@ export function Trainer() {
     : stringPositionsForMidi(currentNote.midi, effectiveMaxFret).filter(
       (p) => !(p.stringIndex === currentNote.stringIndex && p.fretIndex === currentNote.fretIndex),
     );
+
+  useSpacebar(() => {
+    if (currentNote !== null && !isMuted) {
+      engine.playReference(frequencyFromMidi(currentNote.midi));
+    }
+  });
 
   function selectFreeMode() {
     dispatch({
