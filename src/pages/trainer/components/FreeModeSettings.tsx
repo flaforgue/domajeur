@@ -1,6 +1,6 @@
 import { InfoIcon } from "lucide-react";
-import { Tooltip } from "react-tooltip";
 import { ToggleSwitch } from "../../../components/inputs/ToggleSwitch";
+import { HelpTooltip } from "../../../components/HelpTooltip";
 
 interface Props {
   isNaturalsOnly: boolean;
@@ -76,7 +76,7 @@ export function FreeModeSettings({ isNaturalsOnly, onNaturalsOnlyChange, fretMax
           </span>
         </span>
       </label>
-      <Tooltip id="fret-max-help" style={{ maxWidth: "16rem" }} />
+      <HelpTooltip id="fret-max-help" />
     </>
   );
 }

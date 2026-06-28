@@ -1,5 +1,7 @@
+import { ArrowLeftRightIcon } from "lucide-react";
 import { pitchClassName } from "../../../lib/music/notation";
 import {
+  relativeRoot,
   scaleNotesFromConfig,
   type ScaleConfig,
   type ScaleQuality,
@@ -10,6 +12,7 @@ import type { NoteCandidate } from "../../../lib/music/guitar";
 import { useNotation } from "../../../hooks/useNotation";
 import { Flex } from "../../../components/layout/Flex";
 import { Select } from "../../../components/inputs/Select";
+import { HelpTooltip } from "../../../components/HelpTooltip";
 
 const roots: { pitchClass: number; natural: number; accidental: string }[] = [
   { pitchClass: 0, natural: 0, accidental: "" },
@@ -69,6 +72,28 @@ export function scaleSeriesFromState(state: ScaleSelectorState): NoteCandidate[]
   return scaleNotesFromConfig(toConfig(state));
 }
 
+function toRelative(state: ScaleSelectorState): ScaleSelectorState {
+  const current = roots[state.rootIndex];
+  const targetPitchClass = relativeRoot(current.pitchClass, state.quality);
+  const accidentalPreference = current.accidental === "♯"
+    ? ["♯", "", "♭"]
+    : current.accidental === "♭"
+      ? ["♭", "", "♯"]
+      : ["", "♯", "♭"];
+  const candidates = roots
+    .map((root, index) => ({ accidental: root.accidental, pitchClass: root.pitchClass, index }))
+    .filter((candidate) => candidate.pitchClass === targetPitchClass);
+  const match = accidentalPreference
+    .map((accidental) => candidates.find((candidate) => candidate.accidental === accidental))
+    .find((candidate) => candidate !== undefined);
+
+  return {
+    ...state,
+    rootIndex: match?.index ?? candidates[0].index,
+    quality: state.quality === "major" ? "minor" : "major",
+  };
+}
+
 interface Props {
   state: ScaleSelectorState;
   onChange: (state: ScaleSelectorState) => void;
@@ -105,6 +130,32 @@ export function ScaleSelector({ state, onChange }: Props) {
             onChange({ ...state, quality: value as ScaleQuality });
           }}
         />
+        <button
+          type="button"
+          aria-label="Passer à la gamme relative"
+          data-tooltip-id="relative-help"
+          data-tooltip-content="Passer à la gamme relative (mêmes notes, autre tonique)"
+          className={`
+            grid
+            cursor-pointer
+            place-items-center
+            rounded-lg
+            border
+            border-line
+            bg-ebony-2
+            px-2.5
+            text-pearl-dim
+            transition
+
+            hover:border-pearl/28
+            hover:text-pearl
+          `}
+          onClick={() => {
+            onChange(toRelative(state));
+          }}
+        >
+          <ArrowLeftRightIcon width="16" height="16" />
+        </button>
       </Flex>
 
       <Select
@@ -116,6 +167,8 @@ export function ScaleSelector({ state, onChange }: Props) {
           onChange({ ...state, size: scaleType.size, variant: scaleType.variant });
         }}
       />
+
+      <HelpTooltip id="relative-help" />
     </>
   );
 }

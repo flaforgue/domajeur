@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { scaleIntervals, scaleNotesFromConfig, type ScaleConfig } from "./scales";
+import { relativeRoot, scaleIntervals, scaleNotesFromConfig, type ScaleConfig } from "./scales";
 
 const config = (overrides: Partial<ScaleConfig> = {}): ScaleConfig => ({
   root: 0,
@@ -128,5 +128,52 @@ describe("scales.ts", () => {
         expect(note.fretIndex).toBeGreaterThanOrEqual(0);
       }
     });
+  });
+
+  describe("relativeRoot", () => {
+    it("maps a major tonic to its relative minor a minor third below", () => {
+      expect(relativeRoot(0, "major")).toBe(9); // Do majeur → La mineur
+      expect(relativeRoot(7, "major")).toBe(4); // Sol majeur → Mi mineur
+      expect(relativeRoot(9, "major")).toBe(6); // La majeur → Fa♯ mineur
+    });
+
+    it("maps a minor tonic to its relative major a minor third above", () => {
+      expect(relativeRoot(9, "minor")).toBe(0); // La mineur → Do majeur
+      expect(relativeRoot(4, "minor")).toBe(7); // Mi mineur → Sol majeur
+    });
+
+    it("round-trips a major key back to itself through its relative", () => {
+      expect(relativeRoot(relativeRoot(0, "major"), "minor")).toBe(0);
+    });
+
+    it("shares the same pitch classes as its relative", () => {
+      const major = scaleNotesFromConfig(config({ root: 0, quality: "major" })).map((n) => n.midi % 12);
+      const minor = scaleNotesFromConfig(config({ root: 9, quality: "minor" })).map((n) => n.midi % 12);
+      expect(new Set(minor)).toEqual(new Set(major));
+    });
+
+    it.each([
+      ["Do Majeur", 0, "La Mineur", 9],
+      ["Sol Majeur", 7, "Mi Mineur", 4],
+      ["Ré Majeur", 2, "Si Mineur", 11],
+      ["La Majeur", 9, "Fa♯ Mineur", 6],
+      ["Mi Majeur", 4, "Do♯ Mineur", 1],
+      ["Si Majeur", 11, "Sol♯ Mineur", 8],
+      ["Fa♯ Majeur", 6, "Ré♯ Mineur", 3],
+      ["Do♯ Majeur", 1, "La♯ Mineur", 10],
+      ["Fa Majeur", 5, "Ré Mineur", 2],
+      ["Si♭ Majeur", 10, "Sol Mineur", 7],
+      ["Mi♭ Majeur", 3, "Do Mineur", 0],
+      ["La♭ Majeur", 8, "Fa Mineur", 5],
+      ["Ré♭ Majeur", 1, "Si♭ Mineur", 10],
+      ["Sol♭ Majeur", 6, "Mi♭ Mineur", 3],
+      ["Do♭ Majeur", 11, "La♭ Mineur", 8],
+    ])(
+      "should calculate the relative correct for %s and %s",
+      (_majorName, majorRoot, _minorName, minorRoot) => {
+        expect(relativeRoot(majorRoot, "major")).toBe(minorRoot);
+        expect(relativeRoot(minorRoot, "minor")).toBe(majorRoot);
+      },
+    );
   });
 });

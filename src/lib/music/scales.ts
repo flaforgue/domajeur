@@ -60,3 +60,7 @@ export function scaleNotesFromConfig(config: ScaleConfig): NoteCandidate[] {
     };
   });
 }
+
+export function relativeRoot(root: number, quality: ScaleQuality): number {
+  return quality === "major" ? (root + 9) % 12 : (root + 3) % 12;
+}
