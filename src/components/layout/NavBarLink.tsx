@@ -7,12 +7,14 @@ const navBarLink = cva(`
   items-center
   gap-1
   rounded-lg
-  px-4
+  px-2.5
   py-2
   text-sm
   font-semibold
   no-underline
   transition
+
+  md:px-4
 `, {
   variants: {
     isActive: {

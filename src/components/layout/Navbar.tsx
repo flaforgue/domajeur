@@ -21,8 +21,10 @@ export function Navbar() {
         border-b
         border-line
         bg-ebony/82
-        px-6
+        px-4
         backdrop-blur-md
+
+        sm:px-6
       `}
     >
       <Flex
@@ -54,20 +56,20 @@ export function Navbar() {
             className="h-10"
           />
         </Flex>
-        Do Majeur
+        <span className="max-md:hidden">Do Majeur</span>
       </Flex>
       <Flex align="center" gap={2}>
         <NavBarLink to="/" end isDisabled={!isStarted}>
           <GuitarIcon width="20" height="20" />
-          Entraînement
+          <span className="max-md:hidden">Entraînement</span>
         </NavBarLink>
         <NavBarLink to="/accordeur" isDisabled={!isStarted}>
           <GaugeIcon width="20" height="20" />
-          Accordeur
+          <span className="max-md:hidden">Accordeur</span>
         </NavBarLink>
         <NavBarLink to="/metronome" isDisabled={!isStarted}>
           <MetronomeIcon width="20" height="20" />
-          Métronome
+          <span className="max-md:hidden">Métronome</span>
         </NavBarLink>
         <MuteButton />
         <NotationButton />

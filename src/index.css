@@ -61,11 +61,19 @@
   body {
     font-family: var(--font-body);
     color: var(--color-pearl);
+    background: var(--color-ebony);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
     background:
       radial-gradient(900px 680px at 88% 4%, rgba(217, 119, 66, 0.32), transparent 60%),
-      radial-gradient(820px 600px at 12% 112%, rgba(240, 168, 48, 0.38), transparent 62%),
-      var(--color-ebony);
-    -webkit-font-smoothing: antialiased;
+      radial-gradient(820px 600px at 12% 112%, rgba(240, 168, 48, 0.38), transparent 62%);
   }
 
   h1,

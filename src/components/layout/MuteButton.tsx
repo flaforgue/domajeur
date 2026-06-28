@@ -42,7 +42,7 @@ export function MuteButton() {
       }}
     >
       {isMuted ? <VolumeXIcon width="18" height="18" /> : <Volume2Icon width="18" height="18" />}
-      {isMuted && "Son coupé"}
+      {isMuted && <span className="max-md:hidden">Son coupé</span>}
     </button>
   );
 }

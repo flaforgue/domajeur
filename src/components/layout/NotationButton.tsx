@@ -32,7 +32,7 @@ export function NotationButton() {
       }}
     >
       {isInternational ? <GlobeIcon width="18" height="18" /> : <MusicIcon width="18" height="18" />}
-      {isInternational ? "C D E" : "Do Ré Mi"}
+      <span className="max-md:hidden">{isInternational ? "C D E" : "Do Ré Mi"}</span>
     </button>
   );
 }

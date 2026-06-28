@@ -265,6 +265,9 @@ export function Trainer() {
           flex-col
           items-center
           gap-5
+
+          max-md:w-full
+          max-md:max-w-full
         `}
       >
         <NoteCard
