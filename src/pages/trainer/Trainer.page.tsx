@@ -21,7 +21,6 @@ import {
 } from "./components/ScaleSelector";
 import { NoteHistory } from "./components/NoteHistory";
 import { NoteCard } from "./components/NoteCard";
-import { SolutionPanel } from "./components/SolutionPanel";
 import { useNoteValidation } from "./useNoteValidation";
 import {
   DEFAULT_FRET_MAX,
@@ -273,6 +272,9 @@ export function Trainer() {
           noteNameRef={noteNameRef}
           isCheckVisible={isCheckVisible}
           isReplayDisabled={currentNote === null || isMuted}
+          isSolutionShown={state.isSolutionShown}
+          altPositions={altPositions}
+          maxFret={effectiveMaxFret}
           onReplay={() => {
             if (currentNote !== null) {
               engine.playReference(frequencyFromMidi(currentNote.midi));
@@ -303,10 +305,6 @@ export function Trainer() {
             Note suivante
           </Button>
         </Flex>
-
-        {state.isSolutionShown && currentNote !== null && (
-          <SolutionPanel note={currentNote} altPositions={altPositions} maxFret={effectiveMaxFret} />
-        )}
       </main>
     </PageContainer>
   );

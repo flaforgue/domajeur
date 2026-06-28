@@ -1,6 +1,6 @@
 import { fretText, stringName, type NoteCandidate, type StringPosition } from "../../../lib/music/guitar";
 import { useNotation } from "../../../hooks/useNotation";
-import { Panel } from "../../../components/containers/Panel";
+import { Flex } from "../../../components/layout/Flex";
 import { Fretboard } from "./Fretboard";
 
 interface Props {
@@ -9,19 +9,15 @@ interface Props {
   maxFret: number;
 }
 
-export function SolutionPanel({ note, altPositions, maxFret }: Props) {
+export function Solution({ note, altPositions, maxFret }: Props) {
   const [notation] = useNotation();
 
   return (
-    <Panel
-      className={`
-        flex
-        w-full
-        flex-col
-        items-center
-        gap-2.5
-        p-4
-      `}
+    <Flex
+      direction="col"
+      align="center"
+      gap={2.5}
+      className="w-full"
     >
       <div
         className={`
@@ -54,6 +50,6 @@ export function SolutionPanel({ note, altPositions, maxFret }: Props) {
         altPositions={altPositions}
         maxFret={maxFret}
       />
-    </Panel>
+    </Flex>
   );
 }
