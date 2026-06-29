@@ -8,6 +8,7 @@ export interface Frame extends Detection {
 interface PitchStatus {
   isStarted: boolean;
   error: string | null;
+  isPermissionDenied: boolean;
 }
 
 type FrameSubscriber = (frame: Frame) => void;
@@ -46,6 +47,7 @@ function messageFromStartError(e: unknown): string {
 
 export interface PitchEngine {
   start: () => Promise<void>;
+  checkPermission: () => void;
   subscribe: (cb: FrameSubscriber) => () => void;
   subscribeStatus: (cb: () => void) => () => void;
   getStatus: () => PitchStatus;
@@ -65,18 +67,39 @@ export function createPitchEngine(): PitchEngine {
   let animationFrameRef = 0;
   let isLooping = false;
   let error: string | null = null;
+  let isPermissionDenied = false;
   let currentFrame: Frame = silentFrame;
   let pluckWave: PeriodicWave | null = null;
   const frameSubscribers = new Set<FrameSubscriber>();
 
-  let status: PitchStatus = { isStarted: false, error: null };
+  let status: PitchStatus = { isStarted: false, error: null, isPermissionDenied: false };
   const statusSubscribers = new Set<() => void>();
 
   function emitStatus(): void {
-    status = { isStarted, error };
+    status = { isStarted, error, isPermissionDenied };
     statusSubscribers.forEach((notify) => {
       notify();
     });
+  }
+
+  function checkPermission(): void {
+    const permissions = (navigator as { permissions?: Permissions }).permissions;
+    if (permissions === undefined) {
+      return;
+    }
+
+    permissions
+      .query({ name: "microphone" })
+      .then((result) => {
+        function apply(): void {
+          isPermissionDenied = result.state === "denied";
+          emitStatus();
+        }
+
+        apply();
+        result.onchange = apply;
+      })
+      .catch(() => undefined);
   }
 
   function shouldAnalyze(): boolean {
@@ -164,6 +187,10 @@ export function createPitchEngine(): PitchEngine {
     } catch (e) {
       console.error(e);
       error = messageFromStartError(e);
+      if (e instanceof DOMException && (e.name === "NotAllowedError" || e.name === "SecurityError")) {
+        isPermissionDenied = true;
+      }
+
       emitStatus();
     }
   }
@@ -250,5 +277,15 @@ export function createPitchEngine(): PitchEngine {
     }
   }
 
-  return { start, subscribe, subscribeStatus, getStatus, getFrame, getAudioContext, playReference, dispose };
+  return {
+    start,
+    checkPermission,
+    subscribe,
+    subscribeStatus,
+    getStatus,
+    getFrame,
+    getAudioContext,
+    playReference,
+    dispose,
+  };
 }

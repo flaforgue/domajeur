@@ -5,6 +5,7 @@ interface PitchApi {
   engine: PitchEngine;
   isStarted: boolean;
   error: string | null;
+  isPermissionDenied: boolean;
   start: () => Promise<void>;
 }
 
@@ -20,5 +21,11 @@ export function usePitch(): PitchApi {
   const status = useSyncExternalStore(engine.subscribeStatus, engine.getStatus);
   const start = useCallback(() => engine.start(), [engine]);
 
-  return { engine, isStarted: status.isStarted, error: status.error, start };
+  return {
+    engine,
+    isStarted: status.isStarted,
+    error: status.error,
+    isPermissionDenied: status.isPermissionDenied,
+    start,
+  };
 }
