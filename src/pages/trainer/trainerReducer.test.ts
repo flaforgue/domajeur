@@ -31,6 +31,13 @@ describe("trainerReducer", () => {
     expect(next.validationNonce).toBe(start.validationNonce + 1);
   });
 
+  it("validateCurrent uses a shorter advance delay in scale mode", () => {
+    const start = stateWith({ mode: "scale", notes: [note(40)], currentIndex: 0, shouldAutoAdvance: true });
+    const next = trainerReducer(start, { type: "validateCurrent" });
+
+    expect(next.advanceDelayMs).toBe(150);
+  });
+
   it("validateCurrent without auto-advance reveals the solution instead", () => {
     const start = stateWith({ notes: [note(40)], currentIndex: 0, shouldAutoAdvance: false });
     const next = trainerReducer(start, { type: "validateCurrent" });

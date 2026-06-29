@@ -21,6 +21,7 @@ export interface TrainerState {
 
 export const DEFAULT_FRET_MAX = 12;
 const delayBetweenNotesMs = 500;
+const scaleDelayBetweenNotesMs = 150;
 
 export const INITIAL_TRAINER_STATE: TrainerState = {
   mode: "free",
@@ -97,7 +98,9 @@ export function trainerReducer(state: TrainerState, action: TrainerAction): Trai
       const validationNonce = state.validationNonce + 1;
 
       if (state.shouldAutoAdvance) {
-        return { ...state, notes, uiState: "flash", advanceDelayMs: delayBetweenNotesMs, validationNonce };
+        const advanceDelayMs = state.mode === "scale" ? scaleDelayBetweenNotesMs : delayBetweenNotesMs;
+
+        return { ...state, notes, uiState: "flash", advanceDelayMs, validationNonce };
       }
 
       return { ...state, notes, uiState: "success", isSolutionShown: true, validationNonce };
