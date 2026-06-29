@@ -1,7 +1,7 @@
 import type { NoteCandidate } from "../../lib/music/guitar";
 
 type UiState = "listening" | "success" | "flash";
-type TrainerMode = "free" | "scale";
+export type TrainerMode = "free" | "scale";
 
 export interface TrainerState {
   mode: TrainerMode;

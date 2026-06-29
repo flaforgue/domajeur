@@ -1,8 +1,9 @@
-import { useEffect, useReducer, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { PlayIcon } from "lucide-react";
 import { usePitch } from "../../hooks/usePitch";
 import { useMuted } from "../../hooks/useMuted";
 import { useSpacebar } from "../../hooks/useSpacebar";
+import { useWakeLock } from "../../hooks/useWakeLock";
 import { frequencyFromMidi } from "../../lib/music/notation";
 import { randomNote, stringPositionsForMidi, type NoteCandidate } from "../../lib/music/guitar";
 import { Confetti, type ConfettiHandle } from "../../components/effects/Confetti";
@@ -16,7 +17,6 @@ import { LiveReadout } from "./components/LiveReadout";
 import { FreeModeSettings } from "./components/FreeModeSettings";
 import {
   ScaleSelector,
-  DEFAULT_SCALE_STATE,
   scaleSeriesFromState,
   type ScaleSelectorState,
 } from "./components/ScaleSelector";
@@ -24,17 +24,14 @@ import { NoteHistory } from "./components/NoteHistory";
 import { NoteCard } from "./components/NoteCard";
 import { ScaleDiagram } from "./components/ScaleDiagram";
 import { useNoteValidation } from "./useNoteValidation";
-import {
-  DEFAULT_FRET_MAX,
-  INITIAL_TRAINER_STATE,
-  trainerReducer,
-} from "./trainerReducer";
+import { useTrainerState } from "./useTrainerState";
+import { DEFAULT_FRET_MAX } from "./trainerReducer";
 
 export function Trainer() {
   const { engine, isStarted } = usePitch();
   const [isMuted] = useMuted();
-  const [state, dispatch] = useReducer(trainerReducer, INITIAL_TRAINER_STATE);
-  const [scaleState, setScaleState] = useState<ScaleSelectorState>(DEFAULT_SCALE_STATE);
+  useWakeLock(isStarted);
+  const { state, dispatch, scaleState, setScaleState } = useTrainerState();
   const confettiRef = useRef<ConfettiHandle>(null);
   const noteNameRef = useRef<HTMLDivElement>(null);
 
@@ -148,15 +145,24 @@ export function Trainer() {
   useEffect(scheduleAdvance, [state.advanceDelayMs]);
 
   function selectDefaultMode() {
-    if (isStarted) {
+    if (state.mode === "scale") {
+      dispatch({ type: "selectMode", mode: "scale", series: scaleSeriesFromState(scaleState) });
+    } else {
       dispatch({
         type: "selectMode",
         mode: "free",
-        series: [randomNote(INITIAL_TRAINER_STATE.fretMax, INITIAL_TRAINER_STATE.isNaturalsOnly, null)],
+        series: [randomNote(state.fretMax, state.isNaturalsOnly, null)],
       });
     }
   }
-  useEffect(selectDefaultMode, [isStarted]);
+  const selectDefaultModeRef = useRef(selectDefaultMode);
+  selectDefaultModeRef.current = selectDefaultMode;
+  function applyDefaultModeOnStart() {
+    if (isStarted) {
+      selectDefaultModeRef.current();
+    }
+  }
+  useEffect(applyDefaultModeOnStart, [isStarted]);
 
   const isRevisitedInAutoMode = state.uiState === "success" && state.shouldAutoAdvance;
   useNoteValidation({
