@@ -3,6 +3,7 @@ import { MinusIcon, PauseIcon, PlayIcon, PlusIcon } from "lucide-react";
 import { useMuted } from "../../hooks/useMuted";
 import { useMetronome } from "../../hooks/useMetronome";
 import { useSpacebar } from "../../hooks/useSpacebar";
+import { useWakeLock } from "../../hooks/useWakeLock";
 import { cn } from "../../lib/cn";
 import { Button } from "../../components/buttons/Button";
 import { Panel } from "../../components/containers/Panel";
@@ -29,6 +30,8 @@ export function Metronome() {
     beatsPerMeasure,
     isSoundEnabled: !isMuted,
   });
+
+  useWakeLock(isRunning);
 
   useSpacebar(() => {
     if (isMuted) {
