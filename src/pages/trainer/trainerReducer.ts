@@ -41,6 +41,7 @@ export type TrainerAction
     | { type: "focusNote"; index: number }
     | { type: "validateCurrent" }
     | { type: "advance"; candidate: NoteCandidate }
+    | { type: "selectNext"; candidate: NoteCandidate }
     | { type: "setAutoAdvance"; isOn: boolean }
     | { type: "setNaturalsOnly"; isOn: boolean; candidate: NoteCandidate }
     | { type: "setFretMax"; value: number; candidate: NoteCandidate }
@@ -113,6 +114,19 @@ export function trainerReducer(state: TrainerState, action: TrainerAction): Trai
       }
 
       return focusTo(state, state.notes, (state.currentIndex + 1) % state.notes.length, true);
+    }
+
+    case "selectNext": {
+      if (state.mode === "scale") {
+        return focusTo(state, state.notes, (state.currentIndex + 1) % state.notes.length, true);
+      }
+
+      const nextIndex = state.currentIndex + 1;
+      if (nextIndex < state.notes.length) {
+        return focusTo(state, state.notes, nextIndex, true);
+      }
+
+      return focusTo(state, [...state.notes, action.candidate], state.notes.length, true);
     }
 
     case "setAutoAdvance":

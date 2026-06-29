@@ -8,7 +8,7 @@ export function PageContainer({ className, ...props }: HTMLAttributes<HTMLDivEle
         mx-auto
         px-6
         pt-8
-        pb-16
+        pb-8
       `, className)}
       {...props}
     />

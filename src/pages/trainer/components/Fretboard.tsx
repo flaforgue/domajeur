@@ -1,14 +1,15 @@
-import type { StringPosition } from "../../../lib/music/guitar";
+import type { ScaleMarker, StringPosition } from "../../../lib/music/guitar";
 
 interface Props {
   pos: StringPosition;
   altPositions?: StringPosition[];
+  scaleNotes?: ScaleMarker[];
   maxFret: number;
 }
 
 const stringCount = 6;
 
-export function Fretboard({ pos, altPositions = [], maxFret }: Props) {
+export function Fretboard({ pos, altPositions = [], scaleNotes = [], maxFret }: Props) {
   const frets = Math.max(5, maxFret);
   const paddingLeft = 34;
   const paddingRight = 18;
@@ -16,7 +17,7 @@ export function Fretboard({ pos, altPositions = [], maxFret }: Props) {
   const rowGap = 22;
   const fretGap = 40;
   const width = paddingLeft + frets * fretGap + paddingRight;
-  const height = paddingVertical * 2 + (stringCount - 1) * rowGap + 18;
+  const height = paddingVertical * 2 + (stringCount - 1) * rowGap + 6;
 
   const stringY = (i: number) => paddingVertical + (stringCount - 1 - i) * rowGap;
   const fretX = (f: number) => paddingLeft + f * fretGap;
@@ -86,6 +87,24 @@ export function Fretboard({ pos, altPositions = [], maxFret }: Props) {
         >
           {f}
         </text>
+      ))}
+      {scaleNotes.map((scaleNote) => (
+        <circle
+          key={`scale-${scaleNote.stringIndex}-${scaleNote.fretIndex}`}
+          cx={markerX(scaleNote)}
+          cy={markerY(scaleNote)}
+          r={scaleNote.isRoot ? 7 : 5.5}
+          strokeWidth={1.5}
+          className={scaleNote.isRoot
+            ? `
+              fill-clay
+              stroke-clay
+            `
+            : `
+              fill-pearl-faint/25
+              stroke-pearl-faint/50
+            `}
+        />
       ))}
       {altPositions.map((altPosition) => (
         <circle

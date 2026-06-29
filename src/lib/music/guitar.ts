@@ -15,6 +15,7 @@ const naturalPitchClasses = new Set([0, 2, 4, 5, 7, 9, 11]);
 const maxFretForCanonicalPosition = 12;
 
 export interface StringPosition { stringIndex: number; fretIndex: number }
+export interface ScaleMarker extends StringPosition { isRoot: boolean }
 interface Note { stringIndex: number; fretIndex: number; midi: number }
 export type NoteCandidate = Note & { isValidated: boolean };
 

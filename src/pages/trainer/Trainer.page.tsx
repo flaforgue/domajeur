@@ -22,6 +22,7 @@ import {
 } from "./components/ScaleSelector";
 import { NoteHistory } from "./components/NoteHistory";
 import { NoteCard } from "./components/NoteCard";
+import { ScaleDiagram } from "./components/ScaleDiagram";
 import { useNoteValidation } from "./useNoteValidation";
 import {
   DEFAULT_FRET_MAX,
@@ -102,6 +103,10 @@ export function Trainer() {
 
   function advanceToNextNote() {
     dispatch({ type: "advance", candidate: randomNote(state.fretMax, state.isNaturalsOnly, lastMidi) });
+  }
+
+  function selectNextNote() {
+    dispatch({ type: "selectNext", candidate: randomNote(state.fretMax, state.isNaturalsOnly, lastMidi) });
   }
 
   const noteToPlayRef = useRef<NoteCandidate | null>(null);
@@ -324,6 +329,9 @@ export function Trainer() {
           isSolutionShown={state.isSolutionShown}
           altPositions={altPositions}
           maxFret={effectiveMaxFret}
+          extra={state.mode === "scale" && currentNote !== null
+            ? <ScaleDiagram notes={state.notes} currentNote={currentNote} />
+            : undefined}
           onReplay={() => {
             if (currentNote !== null) {
               engine.playReference(frequencyFromMidi(currentNote.midi));
@@ -334,21 +342,23 @@ export function Trainer() {
         <LiveReadout targetMidi={currentNote?.midi ?? null} />
 
         <Flex gap={3} className="w-full">
-          <Button
-            variant="ghost"
-            disabled={currentNote === null}
-            onClick={() => {
-              dispatch({ type: "toggleSolution" });
-            }}
-            className="flex-1"
-          >
-            {state.isSolutionShown ? "Masquer la solution" : "Voir la solution"}
-          </Button>
+          {state.mode !== "scale" && (
+            <Button
+              variant="ghost"
+              disabled={currentNote === null}
+              onClick={() => {
+                dispatch({ type: "toggleSolution" });
+              }}
+              className="flex-1"
+            >
+              {state.isSolutionShown ? "Masquer la solution" : "Voir la solution"}
+            </Button>
+          )}
           <Button
             variant="next"
             isDone={isCheckVisible}
             disabled={currentNote === null || state.advanceDelayMs !== null}
-            onClick={advanceToNextNote}
+            onClick={selectNextNote}
             className="flex-1"
           >
             Note suivante

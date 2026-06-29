@@ -1,4 +1,4 @@
-import type { Ref } from "react";
+import type { ReactNode, Ref } from "react";
 import type { NoteCandidate, StringPosition } from "../../../lib/music/guitar";
 import { cn } from "../../../lib/cn";
 import { Panel } from "../../../components/containers/Panel";
@@ -8,7 +8,7 @@ import { NoteName } from "./NoteName";
 import { Solution } from "./Solution";
 import { AudioLinesIcon, CheckCheckIcon } from "lucide-react";
 
-const noteClass = "font-display text-7xl leading-none font-semibold text-pearl sm:text-8xl md:text-9xl";
+const noteClass = "font-display leading-none font-semibold text-pearl";
 
 interface Props {
   note: NoteCandidate | null;
@@ -18,6 +18,7 @@ interface Props {
   isSolutionShown: boolean;
   altPositions: StringPosition[];
   maxFret: number;
+  extra?: ReactNode;
   onReplay: () => void;
 }
 
@@ -29,23 +30,29 @@ export function NoteCard({
   isSolutionShown,
   altPositions,
   maxFret,
+  extra,
   onReplay,
 }: Props) {
   const isSolutionVisible = isSolutionShown && note !== null;
+  const isCompact = extra !== undefined;
+  const noteSizeClass = isCompact ? "text-4xl sm:text-5xl md:text-6xl" : "text-7xl sm:text-8xl md:text-9xl";
+  const checkSizeClass = isCompact ? "h-12 w-12" : "h-24 w-24";
+  const paddingClass = isCompact ? "pt-6 pb-5" : "pt-10 pb-6";
 
   return (
     <Panel
       variant="display"
-      className={`
-        relative
-        flex
-        w-full
-        flex-col
-        items-center
-        px-6
-        pt-10
-        pb-6
-      `}
+      className={cn(
+        `
+          relative
+          flex
+          w-full
+          flex-col
+          items-center
+          px-6
+        `,
+        paddingClass,
+      )}
     >
       <div
         key={isSolutionVisible ? "solution" : "note"}
@@ -57,27 +64,33 @@ export function NoteCard({
         {isSolutionVisible
           ? <Solution note={note} altPositions={altPositions} maxFret={maxFret} />
           : (
-            <Flex direction="col" align="center" gap={3.5}>
-              <div ref={noteNameRef} className={cn(noteClass, isCheckVisible && "opacity-20")}>
-                {note !== null
-                  ? <NoteName midi={note.midi} />
-                  : <span className="text-pearl-faint">—</span>}
+            <Flex
+              direction={isCompact ? "row" : "col"}
+              align="center"
+              justify="center"
+              gap={isCompact ? 4 : 3.5}
+            >
+              <div className="relative">
+                <div ref={noteNameRef} className={cn(noteClass, noteSizeClass, isCheckVisible && "opacity-20")}>
+                  {note !== null
+                    ? <NoteName midi={note.midi} />
+                    : <span className="text-pearl-faint">—</span>}
+                </div>
+                {isCheckVisible && (
+                  <CheckCheckIcon
+                    className={cn(
+                      `
+                        absolute
+                        inset-0
+                        m-auto
+                        text-green
+                      `,
+                      checkSizeClass,
+                    )}
+                    aria-label="Validé"
+                  />
+                )}
               </div>
-              {isCheckVisible && (
-                <CheckCheckIcon
-                  className={`
-                    absolute
-                    top-1/2
-                    left-1/2
-                    h-24
-                    w-24
-                    -translate-x-1/2
-                    translate-y-[-60%]
-                    text-green
-                  `}
-                  aria-label="Validé"
-                />
-              )}
               <Button
                 variant="icon"
                 aria-label="Réécouter la note"
@@ -89,6 +102,19 @@ export function NoteCard({
             </Flex>
           )}
       </div>
+
+      {extra !== undefined && !isSolutionVisible && (
+        <div
+          className={`
+            mt-5
+            w-full
+            border-t
+            border-line
+          `}
+        >
+          {extra}
+        </div>
+      )}
     </Panel>
   );
 }

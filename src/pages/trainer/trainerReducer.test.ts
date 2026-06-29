@@ -18,7 +18,7 @@ describe("trainerReducer", () => {
     expect(next.notes).toBe(series);
     expect(next.currentIndex).toBe(0);
     expect(next.uiState).toBe("listening");
-    expect(next.noteToPlayNonce).toBe(INITIAL_TRAINER_STATE.noteToPlayNonce + 1);
+    expect(next.noteToPlayNonce).toBe(INITIAL_TRAINER_STATE.noteToPlayNonce);
   });
 
   it("validateCurrent marks the note and, with auto-advance, schedules the next note", () => {
@@ -61,6 +61,31 @@ describe("trainerReducer", () => {
     expect(next.notes).toHaveLength(2);
     expect(next.notes[1]).toBe(candidate);
     expect(next.currentIndex).toBe(1);
+  });
+
+  it("selectNext cycles sequentially in scale mode, ignoring validation", () => {
+    const start = stateWith({ mode: "scale", notes: [note(40), note(45, true), note(50)], currentIndex: 1 });
+    const next = trainerReducer(start, { type: "selectNext", candidate: note(55) });
+
+    expect(next.notes).toHaveLength(3);
+    expect(next.currentIndex).toBe(2);
+  });
+
+  it("selectNext wraps to the first note at the end of a scale", () => {
+    const start = stateWith({ mode: "scale", notes: [note(40), note(45)], currentIndex: 1 });
+    const next = trainerReducer(start, { type: "selectNext", candidate: note(55) });
+
+    expect(next.currentIndex).toBe(0);
+  });
+
+  it("selectNext steps forward in free mode, appending past the end", () => {
+    const start = stateWith({ mode: "free", notes: [note(40), note(45)], currentIndex: 1 });
+    const candidate = note(55);
+    const next = trainerReducer(start, { type: "selectNext", candidate });
+
+    expect(next.notes).toHaveLength(3);
+    expect(next.notes[2]).toBe(candidate);
+    expect(next.currentIndex).toBe(2);
   });
 
   it("toggleSolution flips the solution visibility", () => {
