@@ -193,9 +193,9 @@ export function Trainer() {
       <aside
         className={`
           sticky
-          top-19
+          top-15
           flex
-          max-h-[calc(100vh-92px)]
+          max-h-[calc(100vh-76px)]
           w-80
           flex-none
           flex-col

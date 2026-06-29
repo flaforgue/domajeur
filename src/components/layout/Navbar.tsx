@@ -15,7 +15,7 @@ export function Navbar() {
         top-0
         z-30
         flex
-        h-20
+        h-16
         items-center
         justify-between
         border-b
@@ -43,12 +43,6 @@ export function Navbar() {
         <Flex
           align="center"
           justify="center"
-          className={`
-            aspect-square
-            rounded-full
-            bg-brass
-            p-1
-          `}
         >
           <img
             src={`${import.meta.env.BASE_URL}logo.png`}

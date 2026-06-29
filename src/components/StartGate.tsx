@@ -48,7 +48,7 @@ export function StartGate() {
       className={`
         fixed
         inset-x-0
-        top-20
+        top-16
         bottom-0
         z-50
         grid
