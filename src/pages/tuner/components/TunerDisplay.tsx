@@ -110,7 +110,11 @@ export function TunerDisplay() {
         {isActive ? `${view.cents >= 0 ? "+" : ""}${view.cents} cents` : "joue une corde"}
       </div>
 
-      <Gauge cents={isActive ? view.cents : null} isInTune={isNoteInTune} toleranceInCents={IN_TUNE_TOLERANCE_CENTS} />
+      <Gauge
+        cents={isActive ? view.cents : null}
+        isInTune={isNoteInTune}
+        toleranceInCents={IN_TUNE_TOLERANCE_CENTS}
+      />
 
       <div
         className={`

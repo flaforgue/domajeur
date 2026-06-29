@@ -2,40 +2,55 @@ import { useRef, useState } from "react";
 import { noteFromFrequency } from "../../lib/music/notation";
 import { STRINGS } from "../../lib/music/guitar";
 import { PITCH_DETECTION_PARAMS } from "../../lib/pitch/pitchDetection";
+import type { Frame } from "../../lib/pitch/pitchEngine";
 import { useEngineFrame } from "../../hooks/useEngineFrame";
 import { isInTune } from "./tuning";
 
-const tuneHoldMs = 1000;
+const tuneHoldMs = 750;
+const dropoutGraceMs = 250;
+
+function detectInTuneString(frame: Frame): number {
+  if (frame.isRefPlaying || frame.frequencyInHertz <= 0 || frame.clarity < PITCH_DETECTION_PARAMS.minClarity) {
+    return -1;
+  }
+
+  const { midi, cents } = noteFromFrequency(frame.frequencyInHertz);
+  if (!isInTune(cents)) {
+    return -1;
+  }
+
+  return STRINGS.findIndex((string) => string.midi === midi);
+}
 
 export function useTunedStrings(): ReadonlySet<number> {
   const [tunedStringIndices, setTunedStringIndices] = useState<ReadonlySet<number>>(() => new Set());
   const heldStringIndex = useRef(-1);
-  const heldSince = useRef(0);
+  const inTuneSince = useRef(0);
+  const lastInTuneAt = useRef(0);
 
   useEngineFrame((frame) => {
-    if (frame.isRefPlaying || frame.frequencyInHertz <= 0 || frame.clarity < PITCH_DETECTION_PARAMS.minClarity) {
-      heldStringIndex.current = -1;
+    const now = performance.now();
+    const inTuneStringIndex = detectInTuneString(frame);
+
+    if (inTuneStringIndex < 0) {
+      if (heldStringIndex.current >= 0 && now - lastInTuneAt.current > dropoutGraceMs) {
+        heldStringIndex.current = -1;
+      }
 
       return;
     }
 
-    const { midi, cents } = noteFromFrequency(frame.frequencyInHertz);
-    const stringIndex = STRINGS.findIndex((string) => string.midi === midi);
-    if (stringIndex < 0 || !isInTune(cents)) {
-      heldStringIndex.current = -1;
-
-      return;
+    if (inTuneStringIndex !== heldStringIndex.current) {
+      heldStringIndex.current = inTuneStringIndex;
+      inTuneSince.current = now;
     }
 
-    if (heldStringIndex.current !== stringIndex) {
-      heldStringIndex.current = stringIndex;
-      heldSince.current = performance.now();
+    lastInTuneAt.current = now;
 
-      return;
-    }
-
-    if (performance.now() - heldSince.current >= tuneHoldMs) {
-      setTunedStringIndices((previous) => (previous.has(stringIndex) ? previous : new Set(previous).add(stringIndex)));
+    if (now - inTuneSince.current >= tuneHoldMs) {
+      setTunedStringIndices(
+        (previous) => (previous.has(inTuneStringIndex) ? previous : new Set(previous).add(inTuneStringIndex)),
+      );
     }
   });
 
