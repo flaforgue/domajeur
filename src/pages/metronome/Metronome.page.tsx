@@ -1,9 +1,9 @@
-import { useState } from "react";
 import { MinusIcon, PauseIcon, PlayIcon, PlusIcon } from "lucide-react";
 import { useMuted } from "../../hooks/useMuted";
 import { useMetronome } from "../../hooks/useMetronome";
 import { useSpacebar } from "../../hooks/useSpacebar";
 import { useWakeLock } from "../../hooks/useWakeLock";
+import { useMetronomeSettings } from "./useMetronomeSettings";
 import { cn } from "../../lib/cn";
 import { Button } from "../../components/buttons/Button";
 import { Panel } from "../../components/containers/Panel";
@@ -23,8 +23,7 @@ function clamp(value: number, min: number, max: number): number {
 
 export function Metronome() {
   const [isMuted] = useMuted();
-  const [bpm, setBpm] = useState(100);
-  const [beatsPerMeasure, setBeatsPerMeasure] = useState(4);
+  const [{ bpm, beatsPerMeasure }, setSettings] = useMetronomeSettings();
   const { isRunning, currentBeat, start, stop } = useMetronome({
     bpm,
     beatsPerMeasure,
@@ -32,6 +31,14 @@ export function Metronome() {
   });
 
   useWakeLock(isRunning);
+
+  function changeBpm(value: number): void {
+    setSettings({ bpm: clamp(value, minBpm, maxBpm), beatsPerMeasure });
+  }
+
+  function changeBeatsPerMeasure(value: number): void {
+    setSettings({ bpm, beatsPerMeasure: clamp(value, minBeats, maxBeats) });
+  }
 
   useSpacebar(() => {
     if (isMuted) {
@@ -132,10 +139,21 @@ export function Metronome() {
         <Flex align="center" gap={3} className="w-full">
           <Button
             variant="icon"
+            aria-label="Ralentir de 5"
+            disabled={bpm <= minBpm}
+            onClick={() => {
+              changeBpm(bpm - 5);
+            }}
+            className="text-sm"
+          >
+            −5
+          </Button>
+          <Button
+            variant="icon"
             aria-label="Ralentir"
             disabled={bpm <= minBpm}
             onClick={() => {
-              setBpm((current) => clamp(current - 1, minBpm, maxBpm));
+              changeBpm(bpm - 1);
             }}
           >
             <MinusIcon width="20" height="20" />
@@ -150,7 +168,7 @@ export function Metronome() {
             max={maxBpm}
             value={bpm}
             onChange={(event) => {
-              setBpm(Number(event.target.value));
+              changeBpm(Number(event.target.value));
             }}
           />
           <Button
@@ -158,10 +176,21 @@ export function Metronome() {
             aria-label="Accélérer"
             disabled={bpm >= maxBpm}
             onClick={() => {
-              setBpm((current) => clamp(current + 1, minBpm, maxBpm));
+              changeBpm(bpm + 1);
             }}
           >
             <PlusIcon width="20" height="20" />
+          </Button>
+          <Button
+            variant="icon"
+            aria-label="Accélérer de 5"
+            disabled={bpm >= maxBpm}
+            onClick={() => {
+              changeBpm(bpm + 5);
+            }}
+            className="text-sm"
+          >
+            +5
           </Button>
         </Flex>
 
@@ -176,7 +205,7 @@ export function Metronome() {
             aria-label="Moins de temps"
             disabled={beatsPerMeasure <= minBeats}
             onClick={() => {
-              setBeatsPerMeasure((current) => clamp(current - 1, minBeats, maxBeats));
+              changeBeatsPerMeasure(beatsPerMeasure - 1);
             }}
           >
             <MinusIcon width="20" height="20" />
@@ -197,7 +226,7 @@ export function Metronome() {
             aria-label="Plus de temps"
             disabled={beatsPerMeasure >= maxBeats}
             onClick={() => {
-              setBeatsPerMeasure((current) => clamp(current + 1, minBeats, maxBeats));
+              changeBeatsPerMeasure(beatsPerMeasure + 1);
             }}
           >
             <PlusIcon width="20" height="20" />
