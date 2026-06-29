@@ -1,4 +1,5 @@
 import { useEffect, useReducer, useRef, useState } from "react";
+import { PlayIcon } from "lucide-react";
 import { usePitch } from "../../hooks/usePitch";
 import { useMuted } from "../../hooks/useMuted";
 import { useSpacebar } from "../../hooks/useSpacebar";
@@ -54,7 +55,33 @@ export function Trainer() {
     }
   });
 
+  const scaleTimersRef = useRef<number[]>([]);
+  function stopScalePlayback() {
+    scaleTimersRef.current.forEach((id) => {
+      clearTimeout(id);
+    });
+    scaleTimersRef.current = [];
+  }
+
+  function playScale() {
+    if (isMuted) {
+      return;
+    }
+
+    stopScalePlayback();
+    const stepMs = 400;
+    const noteDurationMs = 1000;
+    state.notes.forEach((note, index) => {
+      const id = window.setTimeout(() => {
+        engine.playReference(frequencyFromMidi(note.midi), noteDurationMs / 1000);
+      }, index * stepMs);
+      scaleTimersRef.current.push(id);
+    });
+  }
+  useEffect(() => stopScalePlayback, []);
+
   function selectFreeMode() {
+    stopScalePlayback();
     dispatch({
       type: "selectMode",
       mode: "free",
@@ -63,10 +90,12 @@ export function Trainer() {
   }
 
   function selectScaleMode() {
+    stopScalePlayback();
     dispatch({ type: "selectMode", mode: "scale", series: scaleSeriesFromState(scaleState) });
   }
 
   function changeScale(next: ScaleSelectorState) {
+    stopScalePlayback();
     setScaleState(next);
     dispatch({ type: "selectMode", mode: "scale", series: scaleSeriesFromState(next) });
   }
@@ -209,6 +238,23 @@ export function Trainer() {
               <ScaleSelector state={scaleState} onChange={changeScale} />
             )}
         </Panel>
+
+        {state.mode === "scale" && (
+          <Button
+            variant="ghost"
+            disabled={isMuted || state.notes.length === 0}
+            onClick={playScale}
+            className={`
+              flex
+              items-center
+              justify-center
+              gap-2
+            `}
+          >
+            <PlayIcon width="16" height="16" />
+            Écouter la gamme
+          </Button>
+        )}
 
         <Flex
           align="center"
