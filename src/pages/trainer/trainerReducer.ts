@@ -46,7 +46,7 @@ export type TrainerAction
     | { type: "setFretMax"; value: number; candidate: NoteCandidate }
     | { type: "toggleSolution" };
 
-function focusTo(state: TrainerState, notes: NoteCandidate[], index: number): TrainerState {
+function focusTo(state: TrainerState, notes: NoteCandidate[], index: number, shouldPlay = false): TrainerState {
   const note = notes[index];
 
   return {
@@ -56,7 +56,7 @@ function focusTo(state: TrainerState, notes: NoteCandidate[], index: number): Tr
     isSolutionShown: false,
     uiState: note.isValidated ? "success" : "listening",
     advanceDelayMs: null,
-    noteToPlayNonce: state.noteToPlayNonce + 1,
+    noteToPlayNonce: shouldPlay ? state.noteToPlayNonce + 1 : state.noteToPlayNonce,
   };
 }
 
@@ -105,14 +105,14 @@ export function trainerReducer(state: TrainerState, action: TrainerAction): Trai
     case "advance": {
       const nextUnvalidated = state.notes.findIndex((note, index) => !note.isValidated && index !== state.currentIndex);
       if (nextUnvalidated >= 0) {
-        return focusTo(state, state.notes, nextUnvalidated);
+        return focusTo(state, state.notes, nextUnvalidated, true);
       }
 
       if (state.mode === "free") {
-        return focusTo(state, [...state.notes, action.candidate], state.notes.length);
+        return focusTo(state, [...state.notes, action.candidate], state.notes.length, true);
       }
 
-      return focusTo(state, state.notes, (state.currentIndex + 1) % state.notes.length);
+      return focusTo(state, state.notes, (state.currentIndex + 1) % state.notes.length, true);
     }
 
     case "setAutoAdvance":
