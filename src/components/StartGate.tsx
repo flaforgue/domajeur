@@ -69,8 +69,8 @@ export function StartGate() {
         {error !== null && (
           <p
             className={`
-              mt-0
-              mb-4
+              mt-4
+              mb-0
               text-sm
               leading-normal
               text-clay

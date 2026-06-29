@@ -22,6 +22,28 @@ const silentFrame: Frame = {
 
 const pluckHarmonics = [0, 1, 0.55, 0.4, 0.25, 0.18, 0.12, 0.08, 0.05];
 
+function messageFromStartError(e: unknown): string {
+  if (e instanceof DOMException) {
+    if (e.name === "NotAllowedError" || e.name === "SecurityError") {
+      return "L'accès au micro doit être autorisé dans les réglages du navigateur.";
+    }
+
+    if (e.name === "NotFoundError" || e.name === "OverconstrainedError") {
+      return "Aucun micro détecté sur cet appareil.";
+    }
+
+    if (e.name === "NotReadableError") {
+      return "Le micro est déjà utilisé par une autre application.";
+    }
+  }
+
+  if (e instanceof Error && e.message !== "") {
+    return e.message;
+  }
+
+  return "Le micro est nécessaire pour utiliser l'application.";
+}
+
 export interface PitchEngine {
   start: () => Promise<void>;
   subscribe: (cb: FrameSubscriber) => () => void;
@@ -109,8 +131,17 @@ export function createPitchEngine(): PitchEngine {
         throw new Error("Web Audio API non supportée par ce navigateur");
       }
 
+      const mediaDevices = (navigator as { mediaDevices?: MediaDevices }).mediaDevices;
+      if (mediaDevices === undefined) {
+        throw new Error(
+          window.isSecureContext
+            ? "Ce navigateur ne permet pas l'accès au micro."
+            : "Le micro nécessite une connexion sécurisée (https).",
+        );
+      }
+
       const audioContext = new audioContextImplementation();
-      const stream = await navigator.mediaDevices.getUserMedia({
+      const stream = await mediaDevices.getUserMedia({
         audio: {
           echoCancellation: false,
           noiseSuppression: false,
@@ -132,7 +163,7 @@ export function createPitchEngine(): PitchEngine {
       syncLoop();
     } catch (e) {
       console.error(e);
-      error = "Le micro est nécessaire pour utiliser l'application.";
+      error = messageFromStartError(e);
       emitStatus();
     }
   }
