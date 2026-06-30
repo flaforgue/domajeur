@@ -1,8 +1,12 @@
 import { ArrowLeftRightIcon } from "lucide-react";
 import { pitchClassName } from "../../../lib/music/notation";
 import {
-  relativeRoot,
+  relativeScale,
+  scaleModeLabel,
   scaleNotesFromConfig,
+  SCALE_QUALITIES,
+  scaleSupportsBlues,
+  scaleSupportsPentatonic,
   type ScaleConfig,
   type ScaleQuality,
   type ScaleSize,
@@ -33,16 +37,15 @@ const roots: { pitchClass: number; natural: number; accidental: string }[] = [
   { pitchClass: 11, natural: 11, accidental: "" },
 ];
 
-const qualityOptions: { value: ScaleQuality; label: string }[] = [
-  { value: "major", label: "Majeur" },
-  { value: "minor", label: "Mineur" },
-];
+const qualityOptions: { value: ScaleQuality; label: string }[] = SCALE_QUALITIES.map((quality) => ({
+  value: quality,
+  label: scaleModeLabel(quality),
+}));
 
 const scaleTypes: { value: string; label: string; size: ScaleSize; variant: ScaleVariant }[] = [
   { value: "pentatonic", label: "Pentatonique", size: "pentatonic", variant: "standard" },
   { value: "pentatonic-blues", label: "Pentatonique (blues)", size: "pentatonic", variant: "blues" },
   { value: "heptatonic", label: "Heptatonique", size: "heptatonic", variant: "standard" },
-  { value: "heptatonic-blues", label: "Heptatonique (blues)", size: "heptatonic", variant: "blues" },
 ];
 
 export interface ScaleSelectorState {
@@ -72,9 +75,25 @@ export function scaleSeriesFromState(state: ScaleSelectorState): NoteCandidate[]
   return scaleNotesFromConfig(toConfig(state));
 }
 
+function clampToMode(state: ScaleSelectorState): ScaleSelectorState {
+  const size = state.size === "pentatonic" && scaleSupportsPentatonic(state.quality) ? "pentatonic" : "heptatonic";
+
+  return {
+    ...state,
+    size,
+    variant: state.variant === "blues" && size === "pentatonic" && scaleSupportsBlues(state.quality)
+      ? "blues"
+      : "standard",
+  };
+}
+
 function toRelative(state: ScaleSelectorState): ScaleSelectorState {
   const current = roots[state.rootIndex];
-  const targetPitchClass = relativeRoot(current.pitchClass, state.quality);
+  const relative = relativeScale(current.pitchClass, state.quality);
+  if (relative === null) {
+    return state;
+  }
+
   const accidentalPreference = current.accidental === "♯"
     ? ["♯", "", "♭"]
     : current.accidental === "♭"
@@ -82,7 +101,7 @@ function toRelative(state: ScaleSelectorState): ScaleSelectorState {
       : ["", "♯", "♭"];
   const candidates = roots
     .map((root, index) => ({ accidental: root.accidental, pitchClass: root.pitchClass, index }))
-    .filter((candidate) => candidate.pitchClass === targetPitchClass);
+    .filter((candidate) => candidate.pitchClass === relative.root);
   const match = accidentalPreference
     .map((accidental) => candidates.find((candidate) => candidate.accidental === accidental))
     .find((candidate) => candidate !== undefined);
@@ -90,7 +109,7 @@ function toRelative(state: ScaleSelectorState): ScaleSelectorState {
   return {
     ...state,
     rootIndex: match?.index ?? candidates[0].index,
-    quality: state.quality === "major" ? "minor" : "major",
+    quality: relative.quality,
   };
 }
 
@@ -102,9 +121,15 @@ interface Props {
 export function ScaleSelector({ state, onChange }: Props) {
   const [notation] = useNotation();
 
-  const selectedScaleType = scaleTypes.find(
+  const availableScaleTypes = scaleTypes.filter(
+    (scaleType) =>
+      (scaleType.size !== "pentatonic" || scaleSupportsPentatonic(state.quality))
+      && (scaleType.variant !== "blues" || scaleSupportsBlues(state.quality)),
+  );
+  const selectedScaleType = availableScaleTypes.find(
     (scaleType) => scaleType.size === state.size && scaleType.variant === state.variant,
   );
+  const hasRelative = relativeScale(roots[state.rootIndex].pitchClass, state.quality) !== null;
 
   return (
     <>
@@ -127,46 +152,51 @@ export function ScaleSelector({ state, onChange }: Props) {
           value={state.quality}
           options={qualityOptions}
           onChange={(value) => {
-            onChange({ ...state, quality: value as ScaleQuality });
+            onChange(clampToMode({ ...state, quality: value as ScaleQuality }));
           }}
         />
-        <button
-          type="button"
-          aria-label="Passer à la gamme relative"
-          data-tooltip-id="relative-help"
-          data-tooltip-content="Passer à la gamme relative (mêmes notes, autre tonique)"
-          className={`
-            grid
-            cursor-pointer
-            place-items-center
-            rounded-lg
-            border
-            border-line
-            bg-ebony-2
-            px-2.5
-            text-pearl-dim
-            transition
+        {hasRelative && (
+          <button
+            type="button"
+            aria-label="Passer à la gamme relative"
+            data-tooltip-id="relative-help"
+            data-tooltip-content="Passer à la gamme relative (mêmes notes, autre tonique)"
+            className={`
+              grid
+              cursor-pointer
+              place-items-center
+              rounded-lg
+              border
+              border-line
+              bg-ebony-2
+              px-2.5
+              text-pearl-dim
+              transition
 
-            hover:border-pearl/28
-            hover:text-pearl
-          `}
-          onClick={() => {
-            onChange(toRelative(state));
-          }}
-        >
-          <ArrowLeftRightIcon width="16" height="16" />
-        </button>
+              hover:border-pearl/28
+              hover:text-pearl
+            `}
+            onClick={() => {
+              onChange(toRelative(state));
+            }}
+          >
+            <ArrowLeftRightIcon width="16" height="16" />
+          </button>
+        )}
       </Flex>
 
-      <Select
-        label="Type de gamme"
-        value={selectedScaleType?.value ?? scaleTypes[0].value}
-        options={scaleTypes.map((scaleType) => ({ value: scaleType.value, label: scaleType.label }))}
-        onChange={(value) => {
-          const scaleType = scaleTypes.find((candidate) => candidate.value === value) ?? scaleTypes[0];
-          onChange({ ...state, size: scaleType.size, variant: scaleType.variant });
-        }}
-      />
+      {availableScaleTypes.length > 1 && (
+        <Select
+          label="Type de gamme"
+          value={selectedScaleType?.value ?? availableScaleTypes[0].value}
+          options={availableScaleTypes.map((scaleType) => ({ value: scaleType.value, label: scaleType.label }))}
+          onChange={(value) => {
+            const scaleType = availableScaleTypes.find((candidate) => candidate.value === value)
+              ?? availableScaleTypes[0];
+            onChange({ ...state, size: scaleType.size, variant: scaleType.variant });
+          }}
+        />
+      )}
 
       <HelpTooltip id="relative-help" />
     </>

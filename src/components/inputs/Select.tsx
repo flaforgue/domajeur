@@ -177,7 +177,7 @@ export function Select({ label, value, options, onChange, className }: Props) {
           ref={listRef}
           role="listbox"
           aria-label={label}
-          style={{ position: "fixed", top: anchor.top, left: anchor.left, width: anchor.width, zIndex: 70 }}
+          style={{ position: "fixed", top: anchor.top, left: anchor.left, minWidth: anchor.width, zIndex: 70 }}
           className={`
             max-h-64
             overflow-y-auto

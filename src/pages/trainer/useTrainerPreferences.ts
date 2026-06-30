@@ -1,4 +1,9 @@
 import { createPersistedStore } from "../../hooks/createPersistedStore";
+import {
+  isScaleQuality,
+  scaleSupportsBlues,
+  scaleSupportsPentatonic,
+} from "../../lib/music/scales";
 import { DEFAULT_SCALE_STATE, type ScaleSelectorState } from "./components/ScaleSelector";
 import { INITIAL_TRAINER_STATE, type TrainerMode } from "./trainerReducer";
 
@@ -24,12 +29,15 @@ function parseScale(value: unknown): ScaleSelectorState {
   }
 
   const scale = value as Partial<ScaleSelectorState>;
+  const quality = isScaleQuality(scale.quality) ? scale.quality : DEFAULT_SCALE_STATE.quality;
+
+  const size = scale.size === "pentatonic" && scaleSupportsPentatonic(quality) ? "pentatonic" : "heptatonic";
 
   return {
     rootIndex: scale.rootIndex ?? DEFAULT_SCALE_STATE.rootIndex,
-    quality: scale.quality === "minor" ? "minor" : "major",
-    size: scale.size === "pentatonic" ? "pentatonic" : "heptatonic",
-    variant: scale.variant === "blues" ? "blues" : "standard",
+    quality,
+    size,
+    variant: scale.variant === "blues" && size === "pentatonic" && scaleSupportsBlues(quality) ? "blues" : "standard",
   };
 }
 

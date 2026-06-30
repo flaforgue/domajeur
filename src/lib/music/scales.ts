@@ -1,9 +1,44 @@
 import { pitchClassFromMidi } from "./notation";
 import { canonicalStringPositionFromMidi, LOWEST_PLAYABLE_MIDI, type NoteCandidate } from "./guitar";
 
-export type ScaleQuality = "major" | "minor";
+export type ScaleQuality = "major" | "minor" | "phrygianDominant";
 export type ScaleSize = "heptatonic" | "pentatonic";
 export type ScaleVariant = "standard" | "blues";
+
+interface ScaleMode {
+  label: string;
+  intervals: number[];
+  pentatonicRemovals?: number[];
+  pentatonicBlueNote?: number;
+  relative?: { offset: number; quality: ScaleQuality };
+}
+
+const modes: Record<ScaleQuality, ScaleMode> = {
+  major: {
+    label: "Majeur",
+    intervals: [0, 2, 4, 5, 7, 9, 11],
+    pentatonicRemovals: [5, 11],
+    pentatonicBlueNote: 3,
+    relative: { offset: 9, quality: "minor" },
+  },
+  minor: {
+    label: "Mineur",
+    intervals: [0, 2, 3, 5, 7, 8, 10],
+    pentatonicRemovals: [2, 8],
+    pentatonicBlueNote: 6,
+    relative: { offset: 3, quality: "major" },
+  },
+  phrygianDominant: {
+    label: "Phrygien dominant",
+    intervals: [0, 1, 4, 5, 7, 8, 10],
+  },
+};
+
+export const SCALE_QUALITIES = Object.keys(modes) as ScaleQuality[];
+
+export function isScaleQuality(value: unknown): value is ScaleQuality {
+  return SCALE_QUALITIES.includes(value as ScaleQuality);
+}
 
 export interface ScaleConfig {
   root: number;
@@ -12,31 +47,30 @@ export interface ScaleConfig {
   variant: ScaleVariant;
 }
 
-const fullScaleByQuality: Record<ScaleQuality, number[]> = {
-  major: [0, 2, 4, 5, 7, 9, 11],
-  minor: [0, 2, 3, 5, 7, 8, 10],
-};
+export function scaleModeLabel(quality: ScaleQuality): string {
+  return modes[quality].label;
+}
 
-const pentatonicRemovalsByQuality: Record<ScaleQuality, number[]> = {
-  major: [5, 11],
-  minor: [2, 8],
-};
+export function scaleSupportsPentatonic(quality: ScaleQuality): boolean {
+  return modes[quality].pentatonicRemovals !== undefined;
+}
 
-const blueNoteByQuality: Record<ScaleQuality, number> = {
-  major: 3,
-  minor: 6,
-};
+export function scaleSupportsBlues(quality: ScaleQuality): boolean {
+  return modes[quality].pentatonicBlueNote !== undefined;
+}
 
 export function scaleIntervals(config: ScaleConfig): number[] {
-  const fullScale = fullScaleByQuality[config.quality];
-  const removals = pentatonicRemovalsByQuality[config.quality];
-  const baseScale = config.size === "pentatonic"
-    ? fullScale.filter((interval) => !removals.includes(interval))
-    : fullScale;
+  const mode = modes[config.quality];
+  const removals = mode.pentatonicRemovals;
+  const isPentatonic = config.size === "pentatonic" && removals !== undefined;
+  const baseScale = isPentatonic
+    ? mode.intervals.filter((interval) => !removals.includes(interval))
+    : mode.intervals;
 
   const intervals = new Set(baseScale);
-  if (config.variant === "blues") {
-    intervals.add(blueNoteByQuality[config.quality]);
+  // The blue note is a pentatonic device, so it only applies to the pentatonic scale.
+  if (config.variant === "blues" && isPentatonic && mode.pentatonicBlueNote !== undefined) {
+    intervals.add(mode.pentatonicBlueNote);
   }
 
   return [...intervals].sort((a, b) => a - b);
@@ -61,6 +95,14 @@ export function scaleNotesFromConfig(config: ScaleConfig): NoteCandidate[] {
   });
 }
 
-export function relativeRoot(root: number, quality: ScaleQuality): number {
-  return quality === "major" ? (root + 9) % 12 : (root + 3) % 12;
+export function relativeScale(
+  root: number,
+  quality: ScaleQuality,
+): { root: number; quality: ScaleQuality } | null {
+  const relative = modes[quality].relative;
+  if (relative === undefined) {
+    return null;
+  }
+
+  return { root: (root + relative.offset) % 12, quality: relative.quality };
 }

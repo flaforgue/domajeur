@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { relativeRoot, scaleIntervals, scaleNotesFromConfig, type ScaleConfig } from "./scales";
+import { isScaleQuality, relativeScale, scaleIntervals, scaleNotesFromConfig, type ScaleConfig } from "./scales";
 
 const config = (overrides: Partial<ScaleConfig> = {}): ScaleConfig => ({
   root: 0,
@@ -35,6 +35,20 @@ describe("scales.ts", () => {
     it("adds the ♭3 blue note to the major pentatonic", () => {
       expect(scaleIntervals(config({ size: "pentatonic", variant: "blues" }))).toEqual([0, 2, 3, 4, 7, 9]);
     });
+
+    it("ignores blues on the heptatonic scale since the blue note is a pentatonic device", () => {
+      expect(scaleIntervals(config({ variant: "blues" }))).toEqual([0, 2, 4, 5, 7, 9, 11]);
+      expect(scaleIntervals(config({ quality: "minor", variant: "blues" }))).toEqual([0, 2, 3, 5, 7, 8, 10]);
+    });
+
+    it("returns the phrygian dominant scale", () => {
+      expect(scaleIntervals(config({ quality: "phrygianDominant" }))).toEqual([0, 1, 4, 5, 7, 8, 10]);
+    });
+
+    it("ignores pentatonic and blues for phrygian dominant since it supports neither", () => {
+      expect(scaleIntervals(config({ quality: "phrygianDominant", size: "pentatonic", variant: "blues" })))
+        .toEqual([0, 1, 4, 5, 7, 8, 10]);
+    });
   });
 
   describe("scaleNotesFromConfig", () => {
@@ -47,15 +61,6 @@ describe("scales.ts", () => {
           variant: "standard",
         },
         midis: [48, 50, 52, 53, 55, 57, 59],
-      },
-      {
-        name: "major heptatonic blues",
-        overrides: {
-          quality: "major",
-          size: "heptatonic",
-          variant: "blues",
-        },
-        midis: [48, 50, 51, 52, 53, 55, 57, 59],
       },
       {
         name: "major pentatonic",
@@ -83,15 +88,6 @@ describe("scales.ts", () => {
           variant: "standard",
         },
         midis: [48, 50, 51, 53, 55, 56, 58],
-      },
-      {
-        name: "minor heptatonic blues",
-        overrides: {
-          quality: "minor",
-          size: "heptatonic",
-          variant: "blues",
-        },
-        midis: [48, 50, 51, 53, 54, 55, 56, 58],
       },
       {
         name: "minor pentatonic",
@@ -130,20 +126,43 @@ describe("scales.ts", () => {
     });
   });
 
-  describe("relativeRoot", () => {
+  describe("isScaleQuality", () => {
+    it("accepts every known quality", () => {
+      expect(isScaleQuality("major")).toBe(true);
+      expect(isScaleQuality("minor")).toBe(true);
+      expect(isScaleQuality("phrygianDominant")).toBe(true);
+    });
+
+    it("rejects unknown or non-string values", () => {
+      expect(isScaleQuality("lydian")).toBe(false);
+      expect(isScaleQuality(undefined)).toBe(false);
+      expect(isScaleQuality(null)).toBe(false);
+      expect(isScaleQuality(0)).toBe(false);
+    });
+  });
+
+  describe("relativeScale", () => {
     it("maps a major tonic to its relative minor a minor third below", () => {
-      expect(relativeRoot(0, "major")).toBe(9); // Do majeur → La mineur
-      expect(relativeRoot(7, "major")).toBe(4); // Sol majeur → Mi mineur
-      expect(relativeRoot(9, "major")).toBe(6); // La majeur → Fa♯ mineur
+      expect(relativeScale(0, "major")).toEqual({ root: 9, quality: "minor" }); // Do majeur → La mineur
+      expect(relativeScale(7, "major")).toEqual({ root: 4, quality: "minor" }); // Sol majeur → Mi mineur
+      expect(relativeScale(9, "major")).toEqual({ root: 6, quality: "minor" }); // La majeur → Fa♯ mineur
     });
 
     it("maps a minor tonic to its relative major a minor third above", () => {
-      expect(relativeRoot(9, "minor")).toBe(0); // La mineur → Do majeur
-      expect(relativeRoot(4, "minor")).toBe(7); // Mi mineur → Sol majeur
+      expect(relativeScale(9, "minor")).toEqual({ root: 0, quality: "major" }); // La mineur → Do majeur
+      expect(relativeScale(4, "minor")).toEqual({ root: 7, quality: "major" }); // Mi mineur → Sol majeur
+    });
+
+    it("has no relative for phrygian dominant", () => {
+      expect(relativeScale(0, "phrygianDominant")).toBeNull();
     });
 
     it("round-trips a major key back to itself through its relative", () => {
-      expect(relativeRoot(relativeRoot(0, "major"), "minor")).toBe(0);
+      const relative = relativeScale(0, "major");
+      expect(relative).toEqual({ root: 9, quality: "minor" });
+      if (relative !== null) {
+        expect(relativeScale(relative.root, relative.quality)).toEqual({ root: 0, quality: "major" });
+      }
     });
 
     it("shares the same pitch classes as its relative", () => {
@@ -171,8 +190,8 @@ describe("scales.ts", () => {
     ])(
       "should calculate the relative correct for %s and %s",
       (_majorName, majorRoot, _minorName, minorRoot) => {
-        expect(relativeRoot(majorRoot, "major")).toBe(minorRoot);
-        expect(relativeRoot(minorRoot, "minor")).toBe(majorRoot);
+        expect(relativeScale(majorRoot, "major")).toEqual({ root: minorRoot, quality: "minor" });
+        expect(relativeScale(minorRoot, "minor")).toEqual({ root: majorRoot, quality: "major" });
       },
     );
   });
