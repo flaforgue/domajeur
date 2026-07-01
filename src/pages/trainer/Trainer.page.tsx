@@ -67,11 +67,12 @@ export function Trainer() {
     }
 
     stopScalePlayback();
-    const stepMs = 400;
+    const stepMs = 500;
     const noteDurationMs = 1000;
     state.notes.forEach((note, index) => {
       const id = window.setTimeout(() => {
         engine.playReference(frequencyFromMidi(note.midi), noteDurationMs / 1000);
+        dispatch({ type: "focusNote", index });
       }, index * stepMs);
       scaleTimersRef.current.push(id);
     });
@@ -309,6 +310,9 @@ export function Trainer() {
           notes={state.notes}
           currentIndex={state.currentIndex}
           onSelect={(index) => {
+            if (!isMuted) {
+              engine.playReference(frequencyFromMidi(state.notes[index].midi));
+            }
             dispatch({ type: "focusNote", index });
           }}
         />
