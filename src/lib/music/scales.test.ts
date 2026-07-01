@@ -1,5 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { isScaleQuality, relativeScale, scaleIntervals, scaleNotesFromConfig, type ScaleConfig } from "./scales";
+import {
+  isScaleQuality,
+  maxPlayableOctaves,
+  relativeScale,
+  scaleIntervals,
+  scaleNotesFromConfig,
+  type ScaleConfig,
+} from "./scales";
 
 const config = (overrides: Partial<ScaleConfig> = {}): ScaleConfig => ({
   root: 0,
@@ -122,6 +129,37 @@ describe("scales.ts", () => {
       for (const note of scaleNotesFromConfig(config({ root: 7 }))) {
         expect(note.isValidated).toBe(false);
         expect(note.fretIndex).toBeGreaterThanOrEqual(0);
+      }
+    });
+
+    it("defaults to a single octave", () => {
+      expect(scaleNotesFromConfig(config()).map((note) => note.midi)).toEqual([48, 50, 52, 53, 55, 57, 59]);
+    });
+
+    it("repeats the intervals shifted by an octave for each additional octave", () => {
+      expect(scaleNotesFromConfig(config({ root: 4 }), 2).map((note) => note.midi)).toEqual([
+        40, 42, 44, 45, 47, 49, 51,
+        52, 54, 56, 57, 59, 61, 63,
+      ]);
+    });
+  });
+
+  describe("maxPlayableOctaves", () => {
+    it("allows three octaves for the lowest roots", () => {
+      expect(maxPlayableOctaves(config({ root: 4 }))).toBe(3); // E, root MIDI 40
+    });
+
+    it("caps roots that would overflow the 12th fret", () => {
+      expect(maxPlayableOctaves(config({ root: 0 }))).toBe(2); // C, root MIDI 48
+      expect(maxPlayableOctaves(config({ root: 9 }))).toBe(2); // A, root MIDI 45
+    });
+
+    it("stays within the highest canonical position for every root", () => {
+      for (let root = 0; root < 12; root++) {
+        const octaves = maxPlayableOctaves(config({ root }));
+        for (const note of scaleNotesFromConfig(config({ root }), octaves)) {
+          expect(note.midi).toBeLessThanOrEqual(76);
+        }
       }
     });
   });

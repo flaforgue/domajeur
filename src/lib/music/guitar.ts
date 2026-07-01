@@ -14,6 +14,8 @@ export const LOWEST_PLAYABLE_MIDI = STRINGS[0].midi;
 const naturalPitchClasses = new Set([0, 2, 4, 5, 7, 9, 11]);
 const maxFretForCanonicalPosition = 12;
 
+export const HIGHEST_CANONICAL_MIDI = STRINGS[STRINGS.length - 1].midi + maxFretForCanonicalPosition;
+
 export interface StringPosition { stringIndex: number; fretIndex: number }
 export interface ScaleMarker extends StringPosition { isRoot: boolean }
 interface Note { stringIndex: number; fretIndex: number; midi: number }

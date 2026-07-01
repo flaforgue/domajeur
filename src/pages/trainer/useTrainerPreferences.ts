@@ -1,10 +1,6 @@
 import { createPersistedStore } from "../../hooks/createPersistedStore";
-import {
-  isScaleQuality,
-  scaleSupportsBlues,
-  scaleSupportsPentatonic,
-} from "../../lib/music/scales";
-import { DEFAULT_SCALE_STATE, type ScaleSelectorState } from "./components/ScaleSelector";
+import { isScaleQuality } from "../../lib/music/scales";
+import { clampScaleState, DEFAULT_SCALE_STATE, type ScaleSelectorState } from "./components/ScaleSelector";
 import { INITIAL_TRAINER_STATE, type TrainerMode } from "./trainerReducer";
 
 export interface TrainerPreferences {
@@ -29,16 +25,14 @@ function parseScale(value: unknown): ScaleSelectorState {
   }
 
   const scale = value as Partial<ScaleSelectorState>;
-  const quality = isScaleQuality(scale.quality) ? scale.quality : DEFAULT_SCALE_STATE.quality;
 
-  const size = scale.size === "pentatonic" && scaleSupportsPentatonic(quality) ? "pentatonic" : "heptatonic";
-
-  return {
+  return clampScaleState({
     rootIndex: scale.rootIndex ?? DEFAULT_SCALE_STATE.rootIndex,
-    quality,
-    size,
-    variant: scale.variant === "blues" && size === "pentatonic" && scaleSupportsBlues(quality) ? "blues" : "standard",
-  };
+    quality: isScaleQuality(scale.quality) ? scale.quality : DEFAULT_SCALE_STATE.quality,
+    size: scale.size === "pentatonic" ? "pentatonic" : "heptatonic",
+    variant: scale.variant === "blues" ? "blues" : "standard",
+    octaves: typeof scale.octaves === "number" ? scale.octaves : DEFAULT_SCALE_STATE.octaves,
+  });
 }
 
 function parse(raw: string): TrainerPreferences | null {

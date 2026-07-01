@@ -1,5 +1,12 @@
 import { pitchClassFromMidi } from "./notation";
-import { canonicalStringPositionFromMidi, LOWEST_PLAYABLE_MIDI, type NoteCandidate } from "./guitar";
+import {
+  canonicalStringPositionFromMidi,
+  HIGHEST_CANONICAL_MIDI,
+  LOWEST_PLAYABLE_MIDI,
+  type NoteCandidate,
+} from "./guitar";
+
+const maxScaleOctaves = 3;
 
 export type ScaleQuality = "major" | "minor" | "phrygianDominant";
 export type ScaleSize = "heptatonic" | "pentatonic";
@@ -76,23 +83,47 @@ export function scaleIntervals(config: ScaleConfig): number[] {
   return [...intervals].sort((a, b) => a - b);
 }
 
-export function scaleNotesFromConfig(config: ScaleConfig): NoteCandidate[] {
+function rootMidiFor(root: number): number {
   let rootMidi = LOWEST_PLAYABLE_MIDI;
-  while (pitchClassFromMidi(rootMidi) !== config.root) {
+  while (pitchClassFromMidi(rootMidi) !== root) {
     rootMidi++;
   }
 
-  return scaleIntervals(config).map((interval) => {
-    const midi = rootMidi + interval;
-    const position = canonicalStringPositionFromMidi(midi);
+  return rootMidi;
+}
 
-    return {
-      stringIndex: position.stringIndex,
-      fretIndex: position.fretIndex,
-      midi,
-      isValidated: false,
-    };
-  });
+export function scaleNotesFromConfig(config: ScaleConfig, octaves = 1): NoteCandidate[] {
+  const rootMidi = rootMidiFor(config.root);
+  const intervals = scaleIntervals(config);
+
+  return Array.from({ length: octaves }, (_, octave) => octave).flatMap((octave) =>
+    intervals.map((interval) => {
+      const midi = rootMidi + interval + 12 * octave;
+      const position = canonicalStringPositionFromMidi(midi);
+
+      return {
+        stringIndex: position.stringIndex,
+        fretIndex: position.fretIndex,
+        midi,
+        isValidated: false,
+      };
+    }),
+  );
+}
+
+export function maxPlayableOctaves(config: ScaleConfig): number {
+  const rootMidi = rootMidiFor(config.root);
+  const intervals = scaleIntervals(config);
+  const topInterval = intervals[intervals.length - 1];
+
+  let max = 1;
+  for (let octaves = 2; octaves <= maxScaleOctaves; octaves++) {
+    if (rootMidi + topInterval + 12 * (octaves - 1) <= HIGHEST_CANONICAL_MIDI) {
+      max = octaves;
+    }
+  }
+
+  return max;
 }
 
 export function relativeScale(

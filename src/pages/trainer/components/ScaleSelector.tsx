@@ -1,6 +1,7 @@
 import { ArrowLeftRightIcon } from "lucide-react";
 import { pitchClassName } from "../../../lib/music/notation";
 import {
+  maxPlayableOctaves,
   relativeScale,
   scaleModeLabel,
   scaleNotesFromConfig,
@@ -53,6 +54,7 @@ export interface ScaleSelectorState {
   quality: ScaleQuality;
   size: ScaleSize;
   variant: ScaleVariant;
+  octaves: number;
 }
 
 export const DEFAULT_SCALE_STATE: ScaleSelectorState = {
@@ -60,6 +62,7 @@ export const DEFAULT_SCALE_STATE: ScaleSelectorState = {
   quality: "major",
   size: "heptatonic",
   variant: "standard",
+  octaves: 1,
 };
 
 function toConfig(state: ScaleSelectorState): ScaleConfig {
@@ -72,19 +75,19 @@ function toConfig(state: ScaleSelectorState): ScaleConfig {
 }
 
 export function scaleSeriesFromState(state: ScaleSelectorState): NoteCandidate[] {
-  return scaleNotesFromConfig(toConfig(state));
+  return scaleNotesFromConfig(toConfig(state), state.octaves);
 }
 
-function clampToMode(state: ScaleSelectorState): ScaleSelectorState {
-  const size = state.size === "pentatonic" && scaleSupportsPentatonic(state.quality) ? "pentatonic" : "heptatonic";
+export function clampScaleState(state: ScaleSelectorState): ScaleSelectorState {
+  const size: ScaleSize = state.size === "pentatonic" && scaleSupportsPentatonic(state.quality)
+    ? "pentatonic"
+    : "heptatonic";
+  const variant: ScaleVariant = state.variant === "blues" && size === "pentatonic" && scaleSupportsBlues(state.quality)
+    ? "blues"
+    : "standard";
+  const clamped = { ...state, size, variant };
 
-  return {
-    ...state,
-    size,
-    variant: state.variant === "blues" && size === "pentatonic" && scaleSupportsBlues(state.quality)
-      ? "blues"
-      : "standard",
-  };
+  return { ...clamped, octaves: Math.min(Math.max(1, clamped.octaves), maxPlayableOctaves(toConfig(clamped))) };
 }
 
 function toRelative(state: ScaleSelectorState): ScaleSelectorState {
@@ -130,6 +133,7 @@ export function ScaleSelector({ state, onChange }: Props) {
     (scaleType) => scaleType.size === state.size && scaleType.variant === state.variant,
   );
   const hasRelative = relativeScale(roots[state.rootIndex].pitchClass, state.quality) !== null;
+  const maxOctaves = maxPlayableOctaves(toConfig(state));
 
   return (
     <>
@@ -143,7 +147,7 @@ export function ScaleSelector({ state, onChange }: Props) {
             label: pitchClassName(root.natural, notation) + root.accidental,
           }))}
           onChange={(value) => {
-            onChange({ ...state, rootIndex: Number(value) });
+            onChange(clampScaleState({ ...state, rootIndex: Number(value) }));
           }}
         />
         <Select
@@ -152,7 +156,7 @@ export function ScaleSelector({ state, onChange }: Props) {
           value={state.quality}
           options={qualityOptions}
           onChange={(value) => {
-            onChange(clampToMode({ ...state, quality: value as ScaleQuality }));
+            onChange(clampScaleState({ ...state, quality: value as ScaleQuality }));
           }}
         />
         {hasRelative && (
@@ -177,7 +181,7 @@ export function ScaleSelector({ state, onChange }: Props) {
               hover:text-pearl
             `}
             onClick={() => {
-              onChange(toRelative(state));
+              onChange(clampScaleState(toRelative(state)));
             }}
           >
             <ArrowLeftRightIcon width="16" height="16" />
@@ -191,12 +195,25 @@ export function ScaleSelector({ state, onChange }: Props) {
           value={selectedScaleType?.value ?? availableScaleTypes[0].value}
           options={availableScaleTypes.map((scaleType) => ({ value: scaleType.value, label: scaleType.label }))}
           onChange={(value) => {
-            const scaleType = availableScaleTypes.find((candidate) => candidate.value === value)
-              ?? availableScaleTypes[0];
-            onChange({ ...state, size: scaleType.size, variant: scaleType.variant });
+            const scaleType = availableScaleTypes.find(
+              (candidate) => candidate.value === value,
+            ) ?? availableScaleTypes[0];
+            onChange(clampScaleState({ ...state, size: scaleType.size, variant: scaleType.variant }));
           }}
         />
       )}
+
+      <Select
+        label="Nombre d'octaves"
+        value={String(state.octaves)}
+        options={Array.from({ length: maxOctaves }, (_, index) => ({
+          value: String(index + 1),
+          label: `${index + 1} octave${index + 1 > 1 ? "s" : ""}`,
+        }))}
+        onChange={(value) => {
+          onChange({ ...state, octaves: Number(value) });
+        }}
+      />
 
       <HelpTooltip id="relative-help" />
     </>
