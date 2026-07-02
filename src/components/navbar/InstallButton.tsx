@@ -80,6 +80,11 @@ export function InstallButton() {
             w-66
             px-4
             py-3.5
+
+            max-md:top-auto
+            max-md:bottom-full
+            max-md:mt-0
+            max-md:mb-2
           `}
         >
           <ol

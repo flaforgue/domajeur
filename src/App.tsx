@@ -13,6 +13,8 @@ export default function App() {
         className={`
           relative
           min-h-[calc(100vh-80px)]
+
+          max-md:pb-20
         `}
       >
         <Routes>

@@ -20,6 +20,7 @@ const flex = cva("flex", {
       center: "justify-center",
       end: "justify-end",
       between: "justify-between",
+      evenly: "justify-evenly",
     },
     isWrapping: {
       true: "flex-wrap",
