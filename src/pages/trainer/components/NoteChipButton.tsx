@@ -22,14 +22,19 @@ const noteChipButton = cva(
         default: `
           border-line
           text-pearl-dim
+
+          hover:border-brass
+          hover:text-brass
         `,
         validated: `
           border-green/40
           text-green
+
+          hover:border-green
         `,
         active: `
-          border-brass
-          text-pearl
+          border-brass/50
+          text-brass
         `,
       },
     },

@@ -68,7 +68,8 @@ const button = cva(
         bg-ebony-3
         text-pearl
 
-        enabled:hover:border-pearl/30
+        enabled:hover:border-brass/50
+        enabled:hover:text-brass
       ` },
       { variant: "next", isDone: true, class: `
         border-transparent
