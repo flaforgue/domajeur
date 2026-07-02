@@ -1,5 +1,6 @@
 import { GaugeIcon, GuitarIcon, MetronomeIcon } from "lucide-react";
 import { Flex } from "../layout/Flex";
+import { InstallButton } from "./InstallButton";
 import { MuteButton } from "./MuteButton";
 import { NotationButton } from "./NotationButton";
 import { NavBarLink } from "./NavBarLink";
@@ -62,6 +63,7 @@ export function Navbar() {
         </NavBarLink>
         <MuteButton />
         <NotationButton />
+        <InstallButton />
       </Flex>
     </nav>
   );
