@@ -1,6 +1,6 @@
-import { forwardRef, type HTMLAttributes } from "react";
+import type { HTMLAttributes } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "../../lib/cn";
+import { cn } from "../lib/cn";
 
 const panel = cva(`
   border
@@ -11,6 +11,10 @@ const panel = cva(`
 `, {
   variants: {
     variant: {
+      plain: `
+        rounded-2xl
+        bg-ebony
+      `,
       surface: `
         rounded-2xl
         bg-ebony-2/55
@@ -26,9 +30,6 @@ const panel = cva(`
 
 type PanelProps = HTMLAttributes<HTMLDivElement> & VariantProps<typeof panel>;
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
-export const Panel = forwardRef<HTMLDivElement, PanelProps>(({ variant, className, ...props }, ref) => {
-  return <div ref={ref} className={cn(panel({ variant }), className)} {...props} />;
-});
-
-Panel.displayName = "Panel";
+export function Panel({ variant, className, ...props }: PanelProps) {
+  return <div className={cn(panel({ variant }), className)} {...props} />;
+}

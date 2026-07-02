@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { usePitch } from "./usePitch";
+import { useLatest } from "./useLatest";
 
 const lookaheadMs = 25;
 const scheduleAheadTimeSeconds = 0.1;
@@ -25,12 +26,9 @@ export function useMetronome({ bpm, beatsPerMeasure, isSoundEnabled }: Options):
   const [isRunning, setIsRunning] = useState(false);
   const [currentBeat, setCurrentBeat] = useState(-1);
 
-  const bpmRef = useRef(bpm);
-  bpmRef.current = bpm;
-  const beatsPerMeasureRef = useRef(beatsPerMeasure);
-  beatsPerMeasureRef.current = beatsPerMeasure;
-  const isSoundEnabledRef = useRef(isSoundEnabled);
-  isSoundEnabledRef.current = isSoundEnabled;
+  const bpmRef = useLatest(bpm);
+  const beatsPerMeasureRef = useLatest(beatsPerMeasure);
+  const isSoundEnabledRef = useLatest(isSoundEnabled);
 
   const nextNoteTimeRef = useRef(0);
   const nextBeatRef = useRef(0);

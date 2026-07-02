@@ -38,13 +38,14 @@ export function createPersistedStore<T>(
   }
 
   function setValue(next: T): void {
-    if (next === getSnapshot()) {
+    const serialized = serialize(next);
+    if (serialized === serialize(getSnapshot())) {
       return;
     }
 
     value = next;
     try {
-      window.localStorage.setItem(storageKey, serialize(next));
+      window.localStorage.setItem(storageKey, serialized);
     } catch (error) {
       console.error(`Failed to write stored "${storageKey}"`, error);
     }

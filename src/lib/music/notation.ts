@@ -28,11 +28,21 @@ export function noteFromFrequency(frequency: number): { midi: number; cents: num
   return { midi, cents };
 }
 
-export interface NamedNote { pitchClass: number; octave: number; name: string }
+export interface NamedNote {
+  pitchClass: number;
+  octave: number;
+  baseName: string;
+  isSharp: boolean;
+  pitchName: string;
+  name: string;
+}
 
 export function namedNoteFromMidi(midi: number, notation: Notation): NamedNote {
   const pitchClass = pitchClassFromMidi(midi);
   const octave = Math.floor(midi / semitonesPerOctave) - 1;
+  const pitchName = pitchClassName(pitchClass, notation);
+  const isSharp = pitchName.endsWith("♯");
+  const baseName = isSharp ? pitchName.slice(0, -1) : pitchName;
 
-  return { pitchClass, octave, name: `${pitchClassName(pitchClass, notation)}${octave}` };
+  return { pitchClass, octave, baseName, isSharp, pitchName, name: `${pitchName}${octave}` };
 }

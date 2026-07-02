@@ -1,6 +1,6 @@
 import { createPersistedStore } from "../../hooks/createPersistedStore";
 
-export interface MetronomeSettings {
+interface MetronomeSettings {
   bpm: number;
   beatsPerMeasure: number;
 }

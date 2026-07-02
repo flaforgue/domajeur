@@ -6,9 +6,9 @@ import { frequencyFromMidi } from "../../lib/music/notation";
 import { STRINGS, stringName } from "../../lib/music/guitar";
 import { PageContainer } from "../../components/layout/PageContainer";
 import { Flex } from "../../components/layout/Flex";
-import { SectionTitle } from "../../components/titles/SectionTitle";
-import { MicPrompt } from "../../components/MicPrompt";
-import { ReferenceButton } from "./components/ReferenceButton";
+import { SectionTitle } from "../../components/SectionTitle";
+import { MicGate } from "../../components/MicGate";
+import { ChipButton } from "../../components/buttons/ChipButton";
 import { TunerDisplay } from "./components/TunerDisplay";
 import { useTunedStrings } from "./useTunedStrings";
 
@@ -21,51 +21,35 @@ export function Tuner() {
   useWakeLock(isStarted);
 
   return (
-    <PageContainer
-      className={`
-        flex
-        max-w-xl
-        flex-col
-        gap-6
-      `}
-    >
-      <div
-        className={`
-          grid
-          w-full
-          grid-cols-1
-        `}
-      >
-        <div
-          className={`
-            col-start-1
-            row-start-1
-          `}
-        >
+    <PageContainer className="max-w-xl">
+      <MicGate feature="L'accordeur a besoin du micro pour écouter ta guitare et afficher la note détectée. Les tons de référence ci-dessous restent disponibles sans le micro.">
+        <Flex gap={6} direction="col">
           <TunerDisplay />
-        </div>
-        {!isStarted && (
-          <MicPrompt feature="L'accordeur a besoin du micro pour écouter ta guitare et afficher la note détectée. Les tons de référence ci-dessous restent disponibles sans le micro." />
-        )}
-      </div>
 
-      <Flex direction="col" align="center" gap={2.5}>
-        <SectionTitle>Cordes à vide</SectionTitle>
-        <Flex isWrapping justify="center" gap={2}>
-          {STRINGS.map((s, i) => (
-            <ReferenceButton
-              key={i}
-              isTuned={tunedStringIndices.has(i)}
-              disabled={isMuted}
-              onClick={() => {
-                engine.playReference(frequencyFromMidi(s.midi), 1.4);
-              }}
-            >
-              {stringName(i, notation)}
-            </ReferenceButton>
-          ))}
+          <Flex direction="col" align="center" gap={2.5}>
+            <SectionTitle>Cordes à vide</SectionTitle>
+            <Flex isWrapping justify="center" gap={2}>
+              {STRINGS.map((s, i) => (
+                <ChipButton
+                  key={i}
+                  tone={tunedStringIndices.has(i) ? "success" : "default"}
+                  disabled={isMuted}
+                  className={`
+                    min-w-16
+                    px-3.5
+                    py-2.5
+                  `}
+                  onClick={() => {
+                    engine.playReference(frequencyFromMidi(s.midi), 1);
+                  }}
+                >
+                  {stringName(i, notation)}
+                </ChipButton>
+              ))}
+            </Flex>
+          </Flex>
         </Flex>
-      </Flex>
+      </MicGate>
     </PageContainer>
   );
 }

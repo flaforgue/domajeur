@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { MicIcon, MicOffIcon } from "lucide-react";
 import { usePitch } from "../hooks/usePitch";
 import { Button } from "./buttons/Button";
-import { Panel } from "./containers/Panel";
+import { Panel } from "./Panel";
 import { Flex } from "./layout/Flex";
 
 type Platform = "ios" | "android" | "other";
@@ -56,12 +56,14 @@ export function MicPrompt({ feature, title = "Micro nécessaire" }: Props) {
 
   const panel = (
     <Panel
+      variant="plain"
       className={`
         flex
         max-w-md
         flex-col
         items-center
         gap-3
+        border-brass/35
         px-6
         py-6
         text-center
@@ -199,9 +201,11 @@ export function MicPrompt({ feature, title = "Micro nécessaire" }: Props) {
         items-center
         justify-center
         rounded-2xl
-        bg-ebony/40
         p-2
       `}
+      style={{
+        backdropFilter: "blur(4px)",
+      }}
     >
       {panel}
     </div>

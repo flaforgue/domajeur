@@ -2,7 +2,7 @@ import { namedNoteFromMidi } from "../../../lib/music/notation";
 import type { NoteCandidate } from "../../../lib/music/guitar";
 import { useNotation } from "../../../hooks/useNotation";
 import { Flex } from "../../../components/layout/Flex";
-import { NoteChipButton } from "./NoteChipButton";
+import { ChipButton } from "../../../components/buttons/ChipButton";
 
 interface Props {
   notes: NoteCandidate[];
@@ -30,16 +30,19 @@ export function NoteHistory({ notes, currentIndex, onSelect }: Props) {
       `}
     >
       {notes.map((note, index) => (
-        <NoteChipButton
+        <ChipButton
           key={index}
-          isActive={index === currentIndex}
-          isValidated={note.isValidated}
+          tone={index === currentIndex ? "active" : note.isValidated ? "success" : "default"}
+          className={`
+            w-18
+            py-2
+          `}
           onClick={() => {
             onSelect(index);
           }}
         >
           {namedNoteFromMidi(note.midi, notation).name}
-        </NoteChipButton>
+        </ChipButton>
       ))}
     </Flex>
   );

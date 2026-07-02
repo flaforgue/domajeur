@@ -1,6 +1,6 @@
 import { createPersistedStore } from "../../hooks/createPersistedStore";
 import { isScaleQuality } from "../../lib/music/scales";
-import { clampScaleState, DEFAULT_SCALE_STATE, type ScaleSelectorState } from "./components/ScaleSelector";
+import { clampScaleState, DEFAULT_SCALE_STATE, type ScaleSelectorState } from "../../lib/music/scaleSelection";
 import { INITIAL_TRAINER_STATE, type TrainerMode } from "./trainerReducer";
 
 export interface TrainerPreferences {

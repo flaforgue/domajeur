@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
-import { noteFromFrequency } from "../../lib/music/notation";
-import { PITCH_DETECTION_PARAMS } from "../../lib/pitch/pitchDetection";
+import { detectedNoteFromFrame } from "../../lib/pitch/detectedNote";
 import { useEngineFrame } from "../../hooks/useEngineFrame";
+import { useLatest } from "../../hooks/useLatest";
 
 const minStableFrames = 8;
 const minClarityToValidate = 0.85;
@@ -16,12 +16,9 @@ export function useNoteValidation({ targetMidi, isActive, onValidated }: Options
   const stable = useRef<{ midi: number | null; count: number }>({ midi: null, count: 0 });
   const hasValidated = useRef(false);
 
-  const targetMidiRef = useRef(targetMidi);
-  targetMidiRef.current = targetMidi;
-  const isActiveRef = useRef(isActive);
-  isActiveRef.current = isActive;
-  const onValidatedRef = useRef(onValidated);
-  onValidatedRef.current = onValidated;
+  const targetMidiRef = useLatest(targetMidi);
+  const isActiveRef = useLatest(isActive);
+  const onValidatedRef = useLatest(onValidated);
 
   useEffect(() => {
     stable.current = { midi: null, count: 0 };
@@ -33,24 +30,26 @@ export function useNoteValidation({ targetMidi, isActive, onValidated }: Options
       return;
     }
 
-    if (frame.frequencyInHertz > 0 && frame.clarity >= PITCH_DETECTION_PARAMS.minClarity) {
-      const { midi } = noteFromFrequency(frame.frequencyInHertz);
-      if (midi === stable.current.midi) {
-        stable.current.count++;
-      } else {
-        stable.current = { midi, count: 1 };
-      }
-
-      if (
-        midi === targetMidiRef.current
-        && frame.clarity >= minClarityToValidate
-        && stable.current.count >= minStableFrames
-      ) {
-        hasValidated.current = true;
-        onValidatedRef.current();
-      }
-    } else {
+    const detected = detectedNoteFromFrame(frame);
+    if (detected === null) {
       stable.current = { midi: null, count: 0 };
+
+      return;
+    }
+
+    if (detected.midi === stable.current.midi) {
+      stable.current.count++;
+    } else {
+      stable.current = { midi: detected.midi, count: 1 };
+    }
+
+    if (
+      detected.midi === targetMidiRef.current
+      && frame.clarity >= minClarityToValidate
+      && stable.current.count >= minStableFrames
+    ) {
+      hasValidated.current = true;
+      onValidatedRef.current();
     }
   });
 }

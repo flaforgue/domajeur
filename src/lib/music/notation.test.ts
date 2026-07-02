@@ -55,11 +55,22 @@ describe("notation.ts", () => {
     });
 
     it("names middle C and exposes pitch class + octave", () => {
-      expect(namedNoteFromMidi(60, "french")).toEqual({ pitchClass: 0, octave: 4, name: "Do4" });
+      expect(namedNoteFromMidi(60, "french")).toEqual({
+        pitchClass: 0,
+        octave: 4,
+        baseName: "Do",
+        isSharp: false,
+        pitchName: "Do",
+        name: "Do4",
+      });
     });
 
     it("names a sharp", () => {
-      expect(namedNoteFromMidi(61, "international").name).toBe("C♯4");
+      const named = namedNoteFromMidi(61, "international");
+      expect(named.name).toBe("C♯4");
+      expect(named.pitchName).toBe("C♯");
+      expect(named.baseName).toBe("C");
+      expect(named.isSharp).toBe(true);
     });
   });
 

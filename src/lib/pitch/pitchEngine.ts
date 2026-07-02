@@ -1,7 +1,6 @@
 import { PITCH_DETECTION_PARAMS, detectPitch, type Detection } from "./pitchDetection";
 
 export interface Frame extends Detection {
-  sampleRate: number;
   isRefPlaying: boolean;
 }
 
@@ -17,7 +16,6 @@ const silentFrame: Frame = {
   frequencyInHertz: -1,
   clarity: 0,
   rootMeanSquare: 0,
-  sampleRate: 0,
   isRefPlaying: false,
 };
 
@@ -25,6 +23,11 @@ interface PluckBuffer {
   buffer: AudioBuffer;
   producedFrequency: number;
 }
+
+const pickPositionRatio = 0.25;
+const attackSoftness = 0.3;
+const bodyResonanceHz = 100;
+const bodyResonanceGainDb = 3;
 
 function createPluckBuffer(
   audioContext: AudioContext,
@@ -40,8 +43,24 @@ function createPluckBuffer(
   const endAmplitude = 0.02;
   const decay = Math.exp(Math.log(endAmplitude) / (sampleRate * duration));
 
+  const noise = new Float32Array(period);
+  let smoothed = 0;
   for (let i = 0; i < period; i++) {
-    data[i] = Math.random() * 2 - 1;
+    smoothed = (1 - attackSoftness) * (Math.random() * 2 - 1) + attackSoftness * smoothed;
+    noise[i] = smoothed;
+  }
+
+  const pickDelay = Math.max(1, Math.round(period * pickPositionRatio));
+  let peak = 0;
+  for (let i = 0; i < period; i++) {
+    data[i] = noise[i] - (i >= pickDelay ? noise[i - pickDelay] : 0);
+    peak = Math.max(peak, Math.abs(data[i]));
+  }
+
+  if (peak > 0) {
+    for (let i = 0; i < period; i++) {
+      data[i] /= peak;
+    }
   }
 
   for (let i = period; i < length; i++) {
@@ -85,7 +104,6 @@ export interface PitchEngine {
   getFrame: () => Frame;
   getAudioContext: () => AudioContext | null;
   playReference: (freq: number, dur?: number) => void;
-  dispose: () => void;
 }
 
 export function createPitchEngine(): PitchEngine {
@@ -178,7 +196,7 @@ export function createPitchEngine(): PitchEngine {
     animationFrameRef = requestAnimationFrame(loop);
     analyser.getFloatTimeDomainData(buffer);
     const detection = detectPitch(buffer, ctx.sampleRate);
-    currentFrame = { ...detection, sampleRate: ctx.sampleRate, isRefPlaying };
+    currentFrame = { ...detection, isRefPlaying };
     frameSubscribers.forEach((notify) => {
       notify(currentFrame);
     });
@@ -281,7 +299,7 @@ export function createPitchEngine(): PitchEngine {
     return ctx;
   }
 
-  function playReference(frequency: number, duration = 1.0): void {
+  function playReference(frequency: number, duration = 0.75): void {
     const audioContext = ensureAudioContext();
     if (audioContext === null) {
       return;
@@ -299,6 +317,12 @@ export function createPitchEngine(): PitchEngine {
     lowpass.Q.value = 0.7;
     lowpass.frequency.value = Math.min(frequency * 8, 8000);
 
+    const bodyResonance = audioContext.createBiquadFilter();
+    bodyResonance.type = "peaking";
+    bodyResonance.frequency.value = bodyResonanceHz;
+    bodyResonance.Q.value = 1.0;
+    bodyResonance.gain.value = bodyResonanceGainDb;
+
     const peakGain = 0.6;
     const attackSeconds = 0.004;
     const releaseSeconds = 0.03;
@@ -308,7 +332,7 @@ export function createPitchEngine(): PitchEngine {
     gain.gain.setValueAtTime(peakGain, now + Math.max(duration - releaseSeconds, attackSeconds));
     gain.gain.linearRampToValueAtTime(0, now + duration);
 
-    source.connect(lowpass).connect(gain).connect(audioContext.destination);
+    source.connect(lowpass).connect(bodyResonance).connect(gain).connect(audioContext.destination);
     isRefPlaying = true;
     source.start(now);
     source.stop(now + duration + 0.05);
@@ -317,17 +341,6 @@ export function createPitchEngine(): PitchEngine {
     timerRef = window.setTimeout(() => {
       isRefPlaying = false;
     }, (duration + 0.25) * 1000);
-  }
-
-  function dispose(): void {
-    clearTimeout(timerRef);
-    cancelAnimationFrame(animationFrameRef);
-    isLooping = false;
-    document.removeEventListener("visibilitychange", handleVisibilityChange);
-
-    if (ctx !== null) {
-      ctx.close().catch(() => undefined);
-    }
   }
 
   return {
@@ -340,6 +353,5 @@ export function createPitchEngine(): PitchEngine {
     getFrame,
     getAudioContext,
     playReference,
-    dispose,
   };
 }

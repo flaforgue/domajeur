@@ -1,7 +1,7 @@
 import type { ReactNode, Ref } from "react";
 import type { NoteCandidate, StringPosition } from "../../../lib/music/guitar";
 import { cn } from "../../../lib/cn";
-import { Panel } from "../../../components/containers/Panel";
+import { Panel } from "../../../components/Panel";
 import { Button } from "../../../components/buttons/Button";
 import { Flex } from "../../../components/layout/Flex";
 import { NoteName } from "./NoteName";

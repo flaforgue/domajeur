@@ -3,14 +3,12 @@ import { useNotation } from "../../../hooks/useNotation";
 
 export function NoteName({ midi }: { midi: number }) {
   const [notation] = useNotation();
-  const nm = namedNoteFromMidi(midi, notation);
-  const base = nm.name.replace(/♯/, "").replace(/-?\d+$/, "");
-  const isSharp = nm.name.includes("♯");
+  const named = namedNoteFromMidi(midi, notation);
 
   return (
     <>
-      {base}
-      {isSharp && (
+      {named.baseName}
+      {named.isSharp && (
         <small
           className={`
             align-[0.55em]
@@ -29,7 +27,7 @@ export function NoteName({ midi }: { midi: number }) {
           text-pearl-faint
         `}
       >
-        {nm.octave}
+        {named.octave}
       </span>
     </>
   );

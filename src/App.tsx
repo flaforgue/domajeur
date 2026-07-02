@@ -1,5 +1,6 @@
 import { Route, Routes } from "react-router-dom";
-import { Navbar } from "./components/layout/Navbar";
+import { HelpTooltip } from "./components/HelpTooltip";
+import { Navbar } from "./components/navbar/Navbar";
 import { Trainer } from "./pages/trainer/Trainer.page";
 import { Tuner } from "./pages/tuner/Tuner.page";
 import { Metronome } from "./pages/metronome/Metronome.page";
@@ -20,6 +21,7 @@ export default function App() {
           <Route path="/metronome" element={<Metronome />} />
         </Routes>
       </div>
+      <HelpTooltip />
     </>
   );
 }

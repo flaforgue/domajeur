@@ -1,4 +1,5 @@
 import { cn } from "../lib/cn";
+import { clamp } from "../lib/math";
 import { Flex } from "./layout/Flex";
 
 interface Props {
@@ -8,7 +9,7 @@ interface Props {
 }
 
 export function Meter({ label, value, fillClassName }: Props) {
-  const percent = Math.round(Math.max(0, Math.min(1, value)) * 100);
+  const percent = Math.round(clamp(value, 0, 1) * 100);
 
   return (
     <Flex align="center" gap={2.5}>

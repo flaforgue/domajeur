@@ -1,4 +1,5 @@
 import { cn } from "../../../lib/cn";
+import { clamp } from "../../../lib/math";
 import { Flex } from "../../../components/layout/Flex";
 
 const tickPositions = ["20%", "35%", "65%", "80%"];
@@ -14,7 +15,7 @@ interface Props {
 export function Gauge({ cents, isInTune, toleranceInCents }: Props) {
   const needleLeft = cents === null
     ? centerPercent
-    : centerPercent + Math.max(-maxCentsOffset, Math.min(maxCentsOffset, cents));
+    : centerPercent + clamp(cents, -maxCentsOffset, maxCentsOffset);
 
   const inTuneZoneLeft = centerPercent - toleranceInCents;
   const inTuneZoneWidth = 2 * toleranceInCents;

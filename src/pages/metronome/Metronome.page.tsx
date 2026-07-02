@@ -5,21 +5,18 @@ import { useSpacebar } from "../../hooks/useSpacebar";
 import { useWakeLock } from "../../hooks/useWakeLock";
 import { useMetronomeSettings } from "./useMetronomeSettings";
 import { cn } from "../../lib/cn";
+import { clamp } from "../../lib/math";
 import { Button } from "../../components/buttons/Button";
-import { Panel } from "../../components/containers/Panel";
+import { Panel } from "../../components/Panel";
 import { PageContainer } from "../../components/layout/PageContainer";
 import { Flex } from "../../components/layout/Flex";
-import { SectionTitle } from "../../components/titles/SectionTitle";
+import { SectionTitle } from "../../components/SectionTitle";
 import { EnableSoundPrompt } from "../../components/EnableSoundPrompt";
 
 const minBpm = 40;
 const maxBpm = 240;
 const minBeats = 1;
 const maxBeats = 12;
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
-}
 
 export function Metronome() {
   const [isMuted] = useMuted();

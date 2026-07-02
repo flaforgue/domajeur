@@ -5,28 +5,28 @@ import { useMuted } from "../../hooks/useMuted";
 import { useSpacebar } from "../../hooks/useSpacebar";
 import { useWakeLock } from "../../hooks/useWakeLock";
 import { frequencyFromMidi } from "../../lib/music/notation";
-import { randomNote, stringPositionsForMidi, type NoteCandidate } from "../../lib/music/guitar";
-import { Confetti, type ConfettiHandle } from "../../components/effects/Confetti";
-import { MicPrompt } from "../../components/MicPrompt";
+import { randomNote, stringPositionsForMidi } from "../../lib/music/guitar";
+import { scaleSeriesFromState, type ScaleSelectorState } from "../../lib/music/scaleSelection";
+import { useLatest } from "../../hooks/useLatest";
+import { useTimeout } from "../../hooks/useTimeout";
+import { Confetti, type ConfettiHandle } from "../../components/Confetti";
+import { MicGate } from "../../components/MicGate";
 import { Button } from "../../components/buttons/Button";
-import { Panel } from "../../components/containers/Panel";
+import { Panel } from "../../components/Panel";
 import { PageContainer } from "../../components/layout/PageContainer";
 import { Flex } from "../../components/layout/Flex";
 import { SegmentedControl } from "../../components/inputs/SegmentedControl";
 import { ToggleSwitch } from "../../components/inputs/ToggleSwitch";
 import { LiveReadout } from "./components/LiveReadout";
 import { FreeModeSettings } from "./components/FreeModeSettings";
-import {
-  ScaleSelector,
-  scaleSeriesFromState,
-  type ScaleSelectorState,
-} from "./components/ScaleSelector";
+import { ScaleSelector } from "./components/ScaleSelector";
 import { NoteHistory } from "./components/NoteHistory";
 import { NoteCard } from "./components/NoteCard";
 import { ScaleDiagram } from "./components/ScaleDiagram";
 import { useNoteValidation } from "./useNoteValidation";
+import { useScalePlayback } from "./useScalePlayback";
 import { useTrainerState } from "./useTrainerState";
-import { DEFAULT_FRET_MAX } from "./trainerReducer";
+import { DEFAULT_FRET_MAX, type TrainerMode } from "./trainerReducer";
 
 export function Trainer() {
   const { engine, isStarted } = usePitch();
@@ -48,56 +48,42 @@ export function Trainer() {
       (p) => !(p.stringIndex === currentNote.stringIndex && p.fretIndex === currentNote.fretIndex),
     );
 
+  function playNote(midi: number, duration?: number): void {
+    if (!isMuted) {
+      engine.playReference(frequencyFromMidi(midi), duration);
+    }
+  }
+
   useSpacebar(() => {
-    if (currentNote !== null && !isMuted) {
-      engine.playReference(frequencyFromMidi(currentNote.midi));
+    if (currentNote !== null) {
+      playNote(currentNote.midi);
     }
   });
 
-  const scaleTimersRef = useRef<number[]>([]);
-  function stopScalePlayback() {
-    scaleTimersRef.current.forEach((id) => {
-      clearTimeout(id);
-    });
-    scaleTimersRef.current = [];
-  }
+  const scalePlayback = useScalePlayback((note, index) => {
+    playNote(note.midi);
+    dispatch({ type: "focusNote", index });
+  });
 
   function playScale() {
     if (isMuted) {
       return;
     }
 
-    stopScalePlayback();
-    const stepMs = 500;
-    const noteDurationMs = 1000;
-    state.notes.forEach((note, index) => {
-      const id = window.setTimeout(() => {
-        engine.playReference(frequencyFromMidi(note.midi), noteDurationMs / 1000);
-        dispatch({ type: "focusNote", index });
-      }, index * stepMs);
-      scaleTimersRef.current.push(id);
-    });
-  }
-  useEffect(() => stopScalePlayback, []);
-
-  function selectFreeMode() {
-    stopScalePlayback();
-    dispatch({
-      type: "selectMode",
-      mode: "free",
-      series: [randomNote(state.fretMax, state.isNaturalsOnly, null)],
-    });
+    scalePlayback.play(state.notes);
   }
 
-  function selectScaleMode() {
-    stopScalePlayback();
-    dispatch({ type: "selectMode", mode: "scale", series: scaleSeriesFromState(scaleState) });
+  function applyMode(mode: TrainerMode, scale = scaleState): void {
+    scalePlayback.stop();
+    const series = mode === "scale"
+      ? scaleSeriesFromState(scale)
+      : [randomNote(state.fretMax, state.isNaturalsOnly, null)];
+    dispatch({ type: "selectMode", mode, series });
   }
 
   function changeScale(next: ScaleSelectorState) {
-    stopScalePlayback();
     setScaleState(next);
-    dispatch({ type: "selectMode", mode: "scale", series: scaleSeriesFromState(next) });
+    applyMode("scale", next);
   }
 
   function advanceToNextNote() {
@@ -108,15 +94,14 @@ export function Trainer() {
     dispatch({ type: "selectNext", candidate: randomNote(state.fretMax, state.isNaturalsOnly, lastMidi) });
   }
 
-  const noteToPlayRef = useRef<NoteCandidate | null>(null);
-  noteToPlayRef.current = !isMuted && currentNote !== null && !currentNote.isValidated ? currentNote : null;
+  const noteToPlayRef = useLatest(!isMuted && currentNote !== null && !currentNote.isValidated ? currentNote : null);
   function playFocusedNote() {
     const note = noteToPlayRef.current;
     if (note !== null) {
       engine.playReference(frequencyFromMidi(note.midi));
     }
   }
-  useEffect(playFocusedNote, [state.noteToPlayNonce, engine]);
+  useEffect(playFocusedNote, [state.noteToPlayNonce, engine, noteToPlayRef]);
 
   function burstConfetti() {
     if (state.validationNonce > 0) {
@@ -129,40 +114,16 @@ export function Trainer() {
   }
   useEffect(burstConfetti, [state.validationNonce]);
 
-  const advanceRef = useRef(advanceToNextNote);
-  advanceRef.current = advanceToNextNote;
-  function scheduleAdvance() {
-    if (state.advanceDelayMs === null) {
-      return undefined;
-    }
-
-    const timer = window.setTimeout(() => {
-      advanceRef.current();
-    }, state.advanceDelayMs);
-
-    return () => {
-      clearTimeout(timer);
-    };
-  }
-  useEffect(scheduleAdvance, [state.advanceDelayMs]);
+  useTimeout(state.advanceDelayMs, advanceToNextNote);
 
   function selectDefaultMode() {
-    if (state.mode === "scale") {
-      dispatch({ type: "selectMode", mode: "scale", series: scaleSeriesFromState(scaleState) });
-    } else {
-      dispatch({
-        type: "selectMode",
-        mode: "free",
-        series: [randomNote(state.fretMax, state.isNaturalsOnly, null)],
-      });
-    }
+    applyMode(state.mode);
   }
-  const selectDefaultModeRef = useRef(selectDefaultMode);
-  selectDefaultModeRef.current = selectDefaultMode;
+  const selectDefaultModeRef = useLatest(selectDefaultMode);
   function initializeDefaultMode() {
     selectDefaultModeRef.current();
   }
-  useEffect(initializeDefaultMode, []);
+  useEffect(initializeDefaultMode, [selectDefaultModeRef]);
 
   const isRevisitedInAutoMode = state.uiState === "success" && state.shouldAutoAdvance;
   useNoteValidation({
@@ -214,11 +175,7 @@ export function Trainer() {
             { value: "scale", label: "Gamme" },
           ]}
           onChange={(value) => {
-            if (value === "free") {
-              selectFreeMode();
-            } else {
-              selectScaleMode();
-            }
+            applyMode(value === "free" ? "free" : "scale");
           }}
         />
 
@@ -309,9 +266,7 @@ export function Trainer() {
           notes={state.notes}
           currentIndex={state.currentIndex}
           onSelect={(index) => {
-            if (!isMuted) {
-              engine.playReference(frequencyFromMidi(state.notes[index].midi));
-            }
+            playNote(state.notes[index].midi);
             dispatch({ type: "focusNote", index });
           }}
         />
@@ -343,33 +298,17 @@ export function Trainer() {
             : undefined}
           onReplay={() => {
             if (currentNote !== null) {
-              engine.playReference(frequencyFromMidi(currentNote.midi));
+              playNote(currentNote.midi);
             }
           }}
         />
 
-        <div
-          className={`
-            grid
-            w-full
-            grid-cols-1
-          `}
+        <MicGate
+          title="Validation au micro"
+          feature="Active le micro pour valider les notes que tu joues."
         >
-          <div
-            className={`
-              col-start-1
-              row-start-1
-            `}
-          >
-            <LiveReadout targetMidi={currentNote?.midi ?? null} />
-          </div>
-          {!isStarted && (
-            <MicPrompt
-              title="Validation au micro"
-              feature="Active le micro pour valider les notes que tu joues."
-            />
-          )}
-        </div>
+          <LiveReadout targetMidi={currentNote?.midi ?? null} />
+        </MicGate>
 
         <Flex gap={3} className="w-full">
           {state.mode !== "scale" && (

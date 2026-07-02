@@ -1,5 +1,5 @@
 import { useEffect, useReducer, useState, type Dispatch } from "react";
-import type { ScaleSelectorState } from "./components/ScaleSelector";
+import type { ScaleSelectorState } from "../../lib/music/scaleSelection";
 import { useTrainerPreferences, type TrainerPreferences } from "./useTrainerPreferences";
 import {
   INITIAL_TRAINER_STATE,

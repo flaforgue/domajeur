@@ -1,10 +1,11 @@
 import { useCallback, useRef, useSyncExternalStore } from "react";
 import { usePitch } from "./usePitch";
+import { shallowEqual } from "../lib/shallowEqual";
 import type { Frame } from "../lib/pitch/pitchEngine";
 
 export function useEngineSelector<T>(
   select: (frame: Frame) => T,
-  isEqual: (a: T, b: T) => boolean,
+  isEqual: (a: T, b: T) => boolean = shallowEqual,
 ): T {
   const { engine } = usePitch();
   const cache = useRef<{ value: T } | null>(null);

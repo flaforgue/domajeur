@@ -1,5 +1,5 @@
 import { GaugeIcon, GuitarIcon, MetronomeIcon } from "lucide-react";
-import { Flex } from "./Flex";
+import { Flex } from "../layout/Flex";
 import { MuteButton } from "./MuteButton";
 import { NotationButton } from "./NotationButton";
 import { NavBarLink } from "./NavBarLink";
@@ -40,7 +40,7 @@ export function Navbar() {
           justify="center"
         >
           <img
-            src={`${import.meta.env.BASE_URL}logo.png`}
+            src="/logo.png"
             alt="Do Majeur"
             className="h-10"
           />

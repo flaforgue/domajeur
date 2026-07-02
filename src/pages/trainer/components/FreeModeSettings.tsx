@@ -1,6 +1,6 @@
 import { InfoIcon } from "lucide-react";
 import { ToggleSwitch } from "../../../components/inputs/ToggleSwitch";
-import { HelpTooltip } from "../../../components/HelpTooltip";
+import { HELP_TOOLTIP_ID } from "../../../components/HelpTooltip";
 
 interface Props {
   isNaturalsOnly: boolean;
@@ -41,7 +41,7 @@ export function FreeModeSettings({ isNaturalsOnly, onNaturalsOnlyChange, fretMax
               cursor-help
               text-pearl-faint
             `}
-            data-tooltip-id="fret-max-help"
+            data-tooltip-id={HELP_TOOLTIP_ID}
             data-tooltip-content="Frette la plus haute utilisée pour générer les notes (0 = uniquement les cordes à vide)."
           />
         </span>
@@ -76,7 +76,6 @@ export function FreeModeSettings({ isNaturalsOnly, onNaturalsOnlyChange, fretMax
           </span>
         </span>
       </label>
-      <HelpTooltip id="fret-max-help" />
     </>
   );
 }

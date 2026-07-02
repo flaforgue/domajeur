@@ -1,7 +1,6 @@
 import { useRef, useState } from "react";
-import { noteFromFrequency } from "../../lib/music/notation";
 import { STRINGS } from "../../lib/music/guitar";
-import { PITCH_DETECTION_PARAMS } from "../../lib/pitch/pitchDetection";
+import { detectedNoteFromFrame } from "../../lib/pitch/detectedNote";
 import type { Frame } from "../../lib/pitch/pitchEngine";
 import { useEngineFrame } from "../../hooks/useEngineFrame";
 import { isInTune } from "./tuning";
@@ -10,16 +9,12 @@ const tuneHoldMs = 750;
 const dropoutGraceMs = 250;
 
 function detectInTuneString(frame: Frame): number {
-  if (frame.isRefPlaying || frame.frequencyInHertz <= 0 || frame.clarity < PITCH_DETECTION_PARAMS.minClarity) {
+  const detected = detectedNoteFromFrame(frame);
+  if (detected === null || !isInTune(detected.cents)) {
     return -1;
   }
 
-  const { midi, cents } = noteFromFrequency(frame.frequencyInHertz);
-  if (!isInTune(cents)) {
-    return -1;
-  }
-
-  return STRINGS.findIndex((string) => string.midi === midi);
+  return STRINGS.findIndex((string) => string.midi === detected.midi);
 }
 
 export function useTunedStrings(): ReadonlySet<number> {

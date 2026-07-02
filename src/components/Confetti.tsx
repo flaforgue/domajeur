@@ -1,4 +1,5 @@
-import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
+import { useEffect, useImperativeHandle, useRef, type Ref } from "react";
+import { clamp } from "../lib/math";
 
 export interface ConfettiHandle {
   burst: (origin?: { x: number; y: number }) => void;
@@ -18,20 +19,15 @@ interface Particle {
 
 const colors = ["#c79a53", "#e0a03c", "#79cf8c", "#efe9db", "#b9774e"];
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
-export const Confetti = forwardRef<ConfettiHandle>((_props, ref) => {
+export function Confetti({ ref }: { ref: Ref<ConfettiHandle> }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const particles = useRef<Particle[]>([]);
   const animationFrameRef = useRef(0);
+  const isAnimatingRef = useRef(false);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (canvas === null) {
-      return;
-    }
-
-    const ctx = canvas.getContext("2d");
-    if (ctx === null) {
       return;
     }
 
@@ -42,39 +38,51 @@ export const Confetti = forwardRef<ConfettiHandle>((_props, ref) => {
     resize();
     window.addEventListener("resize", resize);
 
-    const tick = () => {
-      animationFrameRef.current = requestAnimationFrame(tick);
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      for (let i = particles.current.length - 1; i >= 0; i--) {
-        const particle = particles.current[i];
-        particle.vy += 0.18;
-        particle.x += particle.vx;
-        particle.y += particle.vy;
-        particle.rot += particle.vr;
-        particle.life -= 1;
-
-        if (particle.life <= 0 || particle.y > canvas.height + 40) {
-          particles.current.splice(i, 1);
-          continue;
-        }
-
-        ctx.save();
-        ctx.translate(particle.x, particle.y);
-        ctx.rotate(particle.rot);
-        ctx.fillStyle = particle.color;
-        ctx.globalAlpha = Math.max(0, Math.min(1, particle.life / 40));
-        ctx.fillRect(-particle.size / 2, -particle.size / 2, particle.size, particle.size * 0.6);
-        ctx.restore();
-      }
-    };
-
-    tick();
-
     return () => {
       cancelAnimationFrame(animationFrameRef.current);
+      isAnimatingRef.current = false;
       window.removeEventListener("resize", resize);
     };
   }, []);
+
+  function tick(): void {
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext("2d") ?? null;
+    if (canvas === null || ctx === null) {
+      isAnimatingRef.current = false;
+
+      return;
+    }
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (let i = particles.current.length - 1; i >= 0; i--) {
+      const particle = particles.current[i];
+      particle.vy += 0.18;
+      particle.x += particle.vx;
+      particle.y += particle.vy;
+      particle.rot += particle.vr;
+      particle.life -= 1;
+
+      if (particle.life <= 0 || particle.y > canvas.height + 40) {
+        particles.current.splice(i, 1);
+        continue;
+      }
+
+      ctx.save();
+      ctx.translate(particle.x, particle.y);
+      ctx.rotate(particle.rot);
+      ctx.fillStyle = particle.color;
+      ctx.globalAlpha = clamp(particle.life / 40, 0, 1);
+      ctx.fillRect(-particle.size / 2, -particle.size / 2, particle.size, particle.size * 0.6);
+      ctx.restore();
+    }
+
+    if (particles.current.length > 0) {
+      animationFrameRef.current = requestAnimationFrame(tick);
+    } else {
+      isAnimatingRef.current = false;
+    }
+  }
 
   useImperativeHandle(ref, () => ({
     burst: (origin) => {
@@ -100,6 +108,11 @@ export const Confetti = forwardRef<ConfettiHandle>((_props, ref) => {
           life: 60 + Math.random() * 40,
         });
       }
+
+      if (!isAnimatingRef.current) {
+        isAnimatingRef.current = true;
+        animationFrameRef.current = requestAnimationFrame(tick);
+      }
     },
   }));
 
@@ -116,6 +129,4 @@ export const Confetti = forwardRef<ConfettiHandle>((_props, ref) => {
       `}
     />
   );
-});
-
-Confetti.displayName = "Confetti";
+}

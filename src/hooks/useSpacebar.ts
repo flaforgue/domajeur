@@ -1,4 +1,5 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
+import { useLatest } from "./useLatest";
 
 function isInteractive(element: HTMLElement): boolean {
   const tag = element.tagName;
@@ -11,8 +12,7 @@ function isInteractive(element: HTMLElement): boolean {
 }
 
 export function useSpacebar(onPress: () => void): void {
-  const onPressRef = useRef(onPress);
-  onPressRef.current = onPress;
+  const onPressRef = useLatest(onPress);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -31,5 +31,5 @@ export function useSpacebar(onPress: () => void): void {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, []);
+  }, [onPressRef]);
 }

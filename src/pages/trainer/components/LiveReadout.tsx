@@ -1,62 +1,55 @@
-import { noteFromFrequency, namedNoteFromMidi, type Notation } from "../../../lib/music/notation";
-import { PITCH_DETECTION_PARAMS } from "../../../lib/pitch/pitchDetection";
+import { namedNoteFromMidi, type Notation } from "../../../lib/music/notation";
+import { detectedNoteFromFrame } from "../../../lib/pitch/detectedNote";
 import type { Frame } from "../../../lib/pitch/pitchEngine";
 import { useEngineSelector } from "../../../hooks/useEngineSelector";
 import { useNotation } from "../../../hooks/useNotation";
 import { cn } from "../../../lib/cn";
+import { clamp } from "../../../lib/math";
 import { Meter } from "../../../components/Meter";
 import { Flex } from "../../../components/layout/Flex";
 
 const maxInputRootmeanSquare = 0.1;
 
-type Heard
-  = | { kind: "idle" }
-    | { kind: "reference" }
-    | { kind: "note"; label: string; cents: number; frequency: number; isMatch: boolean };
-
-interface Readout { heard: Heard; level: number; clarity: number }
-
-function clamp01(value: number): number {
-  return Math.max(0, Math.min(1, value));
+interface Readout {
+  kind: "idle" | "reference" | "note";
+  label: string;
+  cents: number;
+  frequency: number;
+  isMatch: boolean;
+  level: number;
+  clarity: number;
 }
 
 function computeReadout(frame: Frame, notation: Notation, targetMidi: number | null): Readout {
-  const level = clamp01(frame.rootMeanSquare / maxInputRootmeanSquare);
+  const level = Math.round(clamp(frame.rootMeanSquare / maxInputRootmeanSquare, 0, 1) * 100) / 100;
+  const silent: Readout = {
+    kind: "idle",
+    label: "",
+    cents: 0,
+    frequency: 0,
+    isMatch: false,
+    level,
+    clarity: 0,
+  };
 
   if (frame.isRefPlaying) {
-    return { heard: { kind: "reference" }, level, clarity: 0 };
+    return { ...silent, kind: "reference" };
   }
 
-  if (frame.frequencyInHertz > 0 && frame.clarity >= PITCH_DETECTION_PARAMS.minClarity) {
-    const { midi, cents } = noteFromFrequency(frame.frequencyInHertz);
-
-    return {
-      heard: {
-        kind: "note",
-        label: namedNoteFromMidi(midi, notation).name,
-        cents,
-        frequency: frame.frequencyInHertz,
-        isMatch: targetMidi !== null && midi === targetMidi,
-      },
-      level,
-      clarity: frame.clarity,
-    };
+  const detected = detectedNoteFromFrame(frame);
+  if (detected === null) {
+    return silent;
   }
 
-  return { heard: { kind: "idle" }, level, clarity: 0 };
-}
-
-function signature(readout: Readout): string {
-  const { heard } = readout;
-  const heardSignature = heard.kind === "note"
-    ? `note:${heard.label}:${heard.cents}:${heard.frequency.toFixed(1)}:${String(heard.isMatch)}`
-    : heard.kind;
-
-  return `${heardSignature}|${Math.round(readout.level * 100)}|${Math.round(readout.clarity * 100)}`;
-}
-
-function readoutsAreEqual(a: Readout, b: Readout): boolean {
-  return signature(a) === signature(b);
+  return {
+    kind: "note",
+    label: namedNoteFromMidi(detected.midi, notation).name,
+    cents: detected.cents,
+    frequency: Number(frame.frequencyInHertz.toFixed(1)),
+    isMatch: targetMidi !== null && detected.midi === targetMidi,
+    level,
+    clarity: Math.round(frame.clarity * 100) / 100,
+  };
 }
 
 interface Props {
@@ -65,29 +58,27 @@ interface Props {
 
 export function LiveReadout({ targetMidi }: Props) {
   const [notation] = useNotation();
-  const readout = useEngineSelector(
-    (frame) => computeReadout(frame, notation, targetMidi),
-    readoutsAreEqual,
-  );
-
-  const { heard } = readout;
+  const readout = useEngineSelector((frame) => computeReadout(frame, notation, targetMidi));
 
   return (
-    <Flex direction="col" gap={3.5} className="w-full">
+    <Flex
+      direction="col"
+      gap={3.5}
+      className="w-full"
+    >
       <Flex
         isWrapping
         align="baseline"
         justify="center"
         gap={2.5}
         className={`
-          min-h-8
           text-sm
           text-pearl-dim
         `}
       >
-        {heard.kind === "idle" && <span className="text-pearl-faint">Joue une note…</span>}
-        {heard.kind === "reference" && <span className="text-brass">♪ Référence…</span>}
-        {heard.kind === "note" && (
+        {readout.kind === "idle" && <span className="text-pearl-faint">Joue une note…</span>}
+        {readout.kind === "reference" && <span className="text-brass">♪ Référence…</span>}
+        {readout.kind === "note" && (
           <>
             <span>J&apos;entends</span>
             <span
@@ -95,9 +86,9 @@ export function LiveReadout({ targetMidi }: Props) {
                 font-display
                 text-2xl
                 font-semibold
-              `, heard.isMatch ? "text-green" : "text-pearl")}
+              `, readout.isMatch ? "text-green" : "text-pearl")}
             >
-              {heard.label}
+              {readout.label}
             </span>
             <span
               className={`
@@ -106,10 +97,10 @@ export function LiveReadout({ targetMidi }: Props) {
                 text-pearl-faint
               `}
             >
-              {heard.cents >= 0 ? "+" : ""}
-              {heard.cents}
+              {readout.cents >= 0 ? "+" : ""}
+              {readout.cents}
               {" c · "}
-              {heard.frequency.toFixed(1)}
+              {readout.frequency.toFixed(1)}
               {" Hz"}
             </span>
           </>

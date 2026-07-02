@@ -1,10 +1,10 @@
-import { noteFromFrequency, namedNoteFromMidi, type Notation } from "../../../lib/music/notation";
-import { PITCH_DETECTION_PARAMS } from "../../../lib/pitch/pitchDetection";
+import { namedNoteFromMidi, type Notation } from "../../../lib/music/notation";
+import { detectedNoteFromFrame } from "../../../lib/pitch/detectedNote";
 import type { Frame } from "../../../lib/pitch/pitchEngine";
 import { useEngineSelector } from "../../../hooks/useEngineSelector";
 import { useNotation } from "../../../hooks/useNotation";
 import { cn } from "../../../lib/cn";
-import { Panel } from "../../../components/containers/Panel";
+import { Panel } from "../../../components/Panel";
 import { Flex } from "../../../components/layout/Flex";
 import { Gauge } from "./Gauge";
 import { IN_TUNE_TOLERANCE_CENTS, isInTune } from "../tuning";
@@ -18,37 +18,27 @@ type TunerView
 const idleView: TunerView = { kind: "idle" };
 
 function computeView(frame: Frame, notation: Notation): TunerView {
-  if (frame.frequencyInHertz <= 0 || frame.clarity < PITCH_DETECTION_PARAMS.minClarity || frame.isRefPlaying) {
+  const detected = detectedNoteFromFrame(frame);
+  if (detected === null) {
     return idleView;
   }
 
-  const { midi, cents } = noteFromFrequency(frame.frequencyInHertz);
-  const named = namedNoteFromMidi(midi, notation);
+  const named = namedNoteFromMidi(detected.midi, notation);
 
   return {
     kind: "active",
-    note: named.name.replace(/\d+$/, ""),
+    note: named.pitchName,
     octave: named.octave,
-    cents,
-    frequency: frame.frequencyInHertz,
-    isInTune: isInTune(cents),
+    cents: detected.cents,
+    frequency: Number(frame.frequencyInHertz.toFixed(1)),
+    isInTune: isInTune(detected.cents),
   };
-}
-
-function signature(view: TunerView): string {
-  return view.kind === "active"
-    ? `${view.note}|${view.octave}|${view.cents}|${view.frequency.toFixed(1)}|${String(view.isInTune)}`
-    : "idle";
-}
-
-function viewsAreEqual(a: TunerView, b: TunerView): boolean {
-  return signature(a) === signature(b);
 }
 
 export function TunerDisplay() {
   const [isMuted] = useMuted();
   const [notation] = useNotation();
-  const view = useEngineSelector((frame) => computeView(frame, notation), viewsAreEqual);
+  const view = useEngineSelector((frame) => computeView(frame, notation));
 
   const isActive = view.kind === "active";
   const isNoteInTune = isActive && view.isInTune;

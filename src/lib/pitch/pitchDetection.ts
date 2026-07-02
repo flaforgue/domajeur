@@ -1,3 +1,5 @@
+import { clamp } from "../math";
+
 export const PITCH_DETECTION_PARAMS = {
   nbSamplesPerAnalysisFrame: 4096,
   minFrequencyInHertz: 70,
@@ -39,7 +41,7 @@ export function detectPitch(buffer: Float32Array, sampleRate: number): Detection
 
   return {
     frequencyInHertz: sampleRate / refinedLag,
-    clarity: Math.max(0, Math.min(1, nsdf[peakLag])),
+    clarity: clamp(nsdf[peakLag], 0, 1),
     rootMeanSquare: rootMeanSquare,
   };
 }
