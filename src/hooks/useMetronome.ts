@@ -86,13 +86,9 @@ export function useMetronome({ bpm, beatsPerMeasure, isSoundEnabled }: Options):
   }
 
   function start(): void {
-    const ctx = engine.getAudioContext();
+    const ctx = engine.ensureAudioContext();
     if (isRunning || ctx === null) {
       return;
-    }
-
-    if (ctx.state === "suspended") {
-      ctx.resume().catch(() => undefined);
     }
 
     nextBeatRef.current = 0;

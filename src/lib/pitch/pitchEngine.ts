@@ -77,6 +77,7 @@ function messageFromStartError(e: unknown): string {
 
 export interface PitchEngine {
   start: () => Promise<void>;
+  ensureAudioContext: () => AudioContext | null;
   checkPermission: () => void;
   subscribe: (cb: FrameSubscriber) => () => void;
   subscribeStatus: (cb: () => void) => () => void;
@@ -109,6 +110,38 @@ export function createPitchEngine(): PitchEngine {
     statusSubscribers.forEach((notify) => {
       notify();
     });
+  }
+
+  function resolveAudioContextImplementation(): typeof AudioContext | undefined {
+    const audioGlobal = window as unknown as {
+      AudioContext?: typeof AudioContext;
+      webkitAudioContext?: typeof AudioContext;
+    };
+
+    return audioGlobal.AudioContext ?? audioGlobal.webkitAudioContext;
+  }
+
+  function ensureAudioContext(): AudioContext | null {
+    if (ctx !== null) {
+      if (ctx.state === "suspended") {
+        ctx.resume().catch(() => undefined);
+      }
+
+      return ctx;
+    }
+
+    const audioContextImplementation = resolveAudioContextImplementation();
+    if (audioContextImplementation === undefined) {
+      error = "La lecture audio n'est pas supportée par ce navigateur.";
+      emitStatus();
+
+      return null;
+    }
+
+    ctx = new audioContextImplementation();
+    emitStatus();
+
+    return ctx;
   }
 
   function checkPermission(): void {
@@ -173,16 +206,12 @@ export function createPitchEngine(): PitchEngine {
       return;
     }
 
-    try {
-      const audioGlobal = window as unknown as {
-        AudioContext?: typeof AudioContext;
-        webkitAudioContext?: typeof AudioContext;
-      };
-      const audioContextImplementation = audioGlobal.AudioContext ?? audioGlobal.webkitAudioContext;
-      if (audioContextImplementation === undefined) {
-        throw new Error("Web Audio API non supportée par ce navigateur");
-      }
+    const audioContext = ensureAudioContext();
+    if (audioContext === null) {
+      return;
+    }
 
+    try {
       const mediaDevices = (navigator as { mediaDevices?: MediaDevices }).mediaDevices;
       if (mediaDevices === undefined) {
         throw new Error(
@@ -192,7 +221,6 @@ export function createPitchEngine(): PitchEngine {
         );
       }
 
-      const audioContext = new audioContextImplementation();
       const stream = await mediaDevices.getUserMedia({
         audio: {
           echoCancellation: false,
@@ -205,7 +233,6 @@ export function createPitchEngine(): PitchEngine {
       analyserNode.fftSize = PITCH_DETECTION_PARAMS.nbSamplesPerAnalysisFrame;
       source.connect(analyserNode);
 
-      ctx = audioContext;
       analyser = analyserNode;
       buffer = new Float32Array(analyserNode.fftSize);
       isStarted = true;
@@ -255,11 +282,11 @@ export function createPitchEngine(): PitchEngine {
   }
 
   function playReference(frequency: number, duration = 1.0): void {
-    if (ctx === null) {
+    const audioContext = ensureAudioContext();
+    if (audioContext === null) {
       return;
     }
 
-    const audioContext = ctx;
     const now = audioContext.currentTime;
 
     const { buffer, producedFrequency } = createPluckBuffer(audioContext, frequency, duration);
@@ -305,6 +332,7 @@ export function createPitchEngine(): PitchEngine {
 
   return {
     start,
+    ensureAudioContext,
     checkPermission,
     subscribe,
     subscribeStatus,

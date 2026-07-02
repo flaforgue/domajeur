@@ -7,6 +7,7 @@ import { useWakeLock } from "../../hooks/useWakeLock";
 import { frequencyFromMidi } from "../../lib/music/notation";
 import { randomNote, stringPositionsForMidi, type NoteCandidate } from "../../lib/music/guitar";
 import { Confetti, type ConfettiHandle } from "../../components/effects/Confetti";
+import { MicPrompt } from "../../components/MicPrompt";
 import { Button } from "../../components/buttons/Button";
 import { Panel } from "../../components/containers/Panel";
 import { PageContainer } from "../../components/layout/PageContainer";
@@ -158,12 +159,10 @@ export function Trainer() {
   }
   const selectDefaultModeRef = useRef(selectDefaultMode);
   selectDefaultModeRef.current = selectDefaultMode;
-  function applyDefaultModeOnStart() {
-    if (isStarted) {
-      selectDefaultModeRef.current();
-    }
+  function initializeDefaultMode() {
+    selectDefaultModeRef.current();
   }
-  useEffect(applyDefaultModeOnStart, [isStarted]);
+  useEffect(initializeDefaultMode, []);
 
   const isRevisitedInAutoMode = state.uiState === "success" && state.shouldAutoAdvance;
   useNoteValidation({
@@ -349,7 +348,28 @@ export function Trainer() {
           }}
         />
 
-        <LiveReadout targetMidi={currentNote?.midi ?? null} />
+        <div
+          className={`
+            grid
+            w-full
+            grid-cols-1
+          `}
+        >
+          <div
+            className={`
+              col-start-1
+              row-start-1
+            `}
+          >
+            <LiveReadout targetMidi={currentNote?.midi ?? null} />
+          </div>
+          {!isStarted && (
+            <MicPrompt
+              title="Validation au micro"
+              feature="Active le micro pour valider les notes que tu joues."
+            />
+          )}
+        </div>
 
         <Flex gap={3} className="w-full">
           {state.mode !== "scale" && (

@@ -7,6 +7,7 @@ import { STRINGS, stringName } from "../../lib/music/guitar";
 import { PageContainer } from "../../components/layout/PageContainer";
 import { Flex } from "../../components/layout/Flex";
 import { SectionTitle } from "../../components/titles/SectionTitle";
+import { MicPrompt } from "../../components/MicPrompt";
 import { ReferenceButton } from "./components/ReferenceButton";
 import { TunerDisplay } from "./components/TunerDisplay";
 import { useTunedStrings } from "./useTunedStrings";
@@ -28,7 +29,25 @@ export function Tuner() {
         gap-6
       `}
     >
-      <TunerDisplay />
+      <div
+        className={`
+          grid
+          w-full
+          grid-cols-1
+        `}
+      >
+        <div
+          className={`
+            col-start-1
+            row-start-1
+          `}
+        >
+          <TunerDisplay />
+        </div>
+        {!isStarted && (
+          <MicPrompt feature="L'accordeur a besoin du micro pour écouter ta guitare et afficher la note détectée. Les tons de référence ci-dessous restent disponibles sans le micro." />
+        )}
+      </div>
 
       <Flex direction="col" align="center" gap={2.5}>
         <SectionTitle>Cordes à vide</SectionTitle>

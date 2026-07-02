@@ -1,13 +1,10 @@
 import { GaugeIcon, GuitarIcon, MetronomeIcon } from "lucide-react";
-import { usePitch } from "../../hooks/usePitch";
 import { Flex } from "./Flex";
 import { MuteButton } from "./MuteButton";
 import { NotationButton } from "./NotationButton";
 import { NavBarLink } from "./NavBarLink";
 
 export function Navbar() {
-  const { isStarted } = usePitch();
-
   return (
     <nav
       className={`
@@ -36,8 +33,6 @@ export function Navbar() {
           text-xl
           font-semibold
           text-pearl-dim
-
-          ${isStarted ? "" : "opacity-40"}
         `}
       >
         <Flex
@@ -53,15 +48,15 @@ export function Navbar() {
         <span className="max-md:hidden">Do Majeur</span>
       </Flex>
       <Flex align="center" gap={2}>
-        <NavBarLink to="/" end isDisabled={!isStarted}>
+        <NavBarLink to="/" end>
           <GuitarIcon width="20" height="20" />
           <span className="max-md:hidden">Entraînement</span>
         </NavBarLink>
-        <NavBarLink to="/accordeur" isDisabled={!isStarted}>
+        <NavBarLink to="/accordeur">
           <GaugeIcon width="20" height="20" />
           <span className="max-md:hidden">Accordeur</span>
         </NavBarLink>
-        <NavBarLink to="/metronome" isDisabled={!isStarted}>
+        <NavBarLink to="/metronome">
           <MetronomeIcon width="20" height="20" />
           <span className="max-md:hidden">Métronome</span>
         </NavBarLink>

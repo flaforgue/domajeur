@@ -8,8 +8,6 @@ import { NoteName } from "./NoteName";
 import { Solution } from "./Solution";
 import { AudioLinesIcon, CheckCheckIcon } from "lucide-react";
 
-const noteClass = "font-display leading-none font-semibold text-pearl";
-
 interface Props {
   note: NoteCandidate | null;
   noteNameRef: Ref<HTMLDivElement>;
@@ -35,7 +33,7 @@ export function NoteCard({
 }: Props) {
   const isSolutionVisible = isSolutionShown && note !== null;
   const isCompact = extra !== undefined;
-  const noteSizeClass = isCompact ? "text-4xl sm:text-5xl md:text-6xl" : "text-7xl sm:text-8xl md:text-9xl";
+  const noteSizeClass = isCompact ? "text-4xl" : "text-7xl";
   const checkSizeClass = isCompact ? "h-12 w-12" : "h-24 w-24";
   const paddingClass = isCompact ? "pt-6 pb-5" : "pt-10 pb-6";
 
@@ -71,7 +69,15 @@ export function NoteCard({
               gap={isCompact ? 4 : 3.5}
             >
               <div className="relative">
-                <div ref={noteNameRef} className={cn(noteClass, noteSizeClass, isCheckVisible && "opacity-20")}>
+                <div
+                  ref={noteNameRef}
+                  className={cn(`
+                    font-display
+                    leading-none
+                    font-semibold
+                    text-pearl
+                  `, noteSizeClass, isCheckVisible && "opacity-20")}
+                >
                   {note !== null
                     ? <NoteName midi={note.midi} />
                     : <span className="text-pearl-faint">—</span>}
