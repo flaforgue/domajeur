@@ -21,7 +21,37 @@ const silentFrame: Frame = {
   isRefPlaying: false,
 };
 
-const pluckHarmonics = [0, 1, 0.55, 0.4, 0.25, 0.18, 0.12, 0.08, 0.05];
+interface PluckBuffer {
+  buffer: AudioBuffer;
+  producedFrequency: number;
+}
+
+function createPluckBuffer(
+  audioContext: AudioContext,
+  frequency: number,
+  duration: number,
+): PluckBuffer {
+  const { sampleRate } = audioContext;
+  const period = Math.max(2, Math.round(sampleRate / frequency));
+  const length = Math.floor(sampleRate * (duration + 0.1));
+  const buffer = audioContext.createBuffer(1, length, sampleRate);
+  const data = buffer.getChannelData(0);
+
+  const endAmplitude = 0.02;
+  const decay = Math.exp(Math.log(endAmplitude) / (sampleRate * duration));
+
+  for (let i = 0; i < period; i++) {
+    data[i] = Math.random() * 2 - 1;
+  }
+
+  for (let i = period; i < length; i++) {
+    const previous = data[i - period];
+    const previousBefore = i - period - 1 >= 0 ? data[i - period - 1] : previous;
+    data[i] = decay * 0.5 * (previous + previousBefore);
+  }
+
+  return { buffer, producedFrequency: sampleRate / period };
+}
 
 function messageFromStartError(e: unknown): string {
   if (e instanceof DOMException) {
@@ -69,7 +99,6 @@ export function createPitchEngine(): PitchEngine {
   let error: string | null = null;
   let isPermissionDenied = false;
   let currentFrame: Frame = silentFrame;
-  let pluckWave: PeriodicWave | null = null;
   const frameSubscribers = new Set<FrameSubscriber>();
 
   let status: PitchStatus = { isStarted: false, error: null, isPermissionDenied: false };
@@ -233,32 +262,29 @@ export function createPitchEngine(): PitchEngine {
     const audioContext = ctx;
     const now = audioContext.currentTime;
 
-    pluckWave ??= audioContext.createPeriodicWave(
-      new Float32Array(pluckHarmonics.length),
-      Float32Array.from(pluckHarmonics),
-    );
-    const oscillator = audioContext.createOscillator();
-    oscillator.setPeriodicWave(pluckWave);
-    oscillator.frequency.value = frequency;
+    const { buffer, producedFrequency } = createPluckBuffer(audioContext, frequency, duration);
+    const source = audioContext.createBufferSource();
+    source.buffer = buffer;
+    source.playbackRate.value = frequency / producedFrequency;
 
     const lowpass = audioContext.createBiquadFilter();
     lowpass.type = "lowpass";
-    lowpass.Q.value = 1;
-    lowpass.frequency.setValueAtTime(Math.min(frequency * 6, 8000), now);
-    lowpass.frequency.exponentialRampToValueAtTime(Math.max(frequency * 2, 200), now + duration);
+    lowpass.Q.value = 0.7;
+    lowpass.frequency.value = Math.min(frequency * 8, 8000);
 
-    const peakGain = 0.3;
-    const attackSeconds = 0.005;
-    const silenceGain = 0.0001;
+    const peakGain = 0.6;
+    const attackSeconds = 0.004;
+    const releaseSeconds = 0.03;
     const gain = audioContext.createGain();
     gain.gain.setValueAtTime(0, now);
     gain.gain.linearRampToValueAtTime(peakGain, now + attackSeconds);
-    gain.gain.exponentialRampToValueAtTime(silenceGain, now + duration);
+    gain.gain.setValueAtTime(peakGain, now + Math.max(duration - releaseSeconds, attackSeconds));
+    gain.gain.linearRampToValueAtTime(0, now + duration);
 
-    oscillator.connect(lowpass).connect(gain).connect(audioContext.destination);
+    source.connect(lowpass).connect(gain).connect(audioContext.destination);
     isRefPlaying = true;
-    oscillator.start(now);
-    oscillator.stop(now + duration + 0.05);
+    source.start(now);
+    source.stop(now + duration + 0.05);
 
     clearTimeout(timerRef);
     timerRef = window.setTimeout(() => {
