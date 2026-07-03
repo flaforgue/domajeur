@@ -48,6 +48,15 @@ describe("scales.ts", () => {
       expect(scaleIntervals(config({ quality: "minor", variant: "blues" }))).toEqual([0, 2, 3, 5, 7, 8, 10]);
     });
 
+    it("returns the harmonic minor scale with its raised 7th", () => {
+      expect(scaleIntervals(config({ quality: "harmonicMinor" }))).toEqual([0, 2, 3, 5, 7, 8, 11]);
+    });
+
+    it("ignores pentatonic and blues for harmonic minor since it supports neither", () => {
+      expect(scaleIntervals(config({ quality: "harmonicMinor", size: "pentatonic", variant: "blues" })))
+        .toEqual([0, 2, 3, 5, 7, 8, 11]);
+    });
+
     it("returns the phrygian dominant scale", () => {
       expect(scaleIntervals(config({ quality: "phrygianDominant" }))).toEqual([0, 1, 4, 5, 7, 8, 10]);
     });
@@ -168,6 +177,7 @@ describe("scales.ts", () => {
     it("accepts every known quality", () => {
       expect(isScaleQuality("major")).toBe(true);
       expect(isScaleQuality("minor")).toBe(true);
+      expect(isScaleQuality("harmonicMinor")).toBe(true);
       expect(isScaleQuality("phrygianDominant")).toBe(true);
     });
 
@@ -191,7 +201,8 @@ describe("scales.ts", () => {
       expect(relativeScale(4, "minor")).toEqual({ root: 7, quality: "major" }); // Mi mineur → Sol majeur
     });
 
-    it("has no relative for phrygian dominant", () => {
+    it("has no relative for harmonic minor or phrygian dominant", () => {
+      expect(relativeScale(0, "harmonicMinor")).toBeNull();
       expect(relativeScale(0, "phrygianDominant")).toBeNull();
     });
 

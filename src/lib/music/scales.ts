@@ -8,7 +8,7 @@ import {
 
 const maxScaleOctaves = 3;
 
-export type ScaleQuality = "major" | "minor" | "phrygianDominant";
+export type ScaleQuality = "major" | "minor" | "harmonicMinor" | "phrygianDominant";
 export type ScaleSize = "heptatonic" | "pentatonic";
 export type ScaleVariant = "standard" | "blues";
 
@@ -29,11 +29,15 @@ const modes: Record<ScaleQuality, ScaleMode> = {
     relative: { offset: 9, quality: "minor" },
   },
   minor: {
-    label: "Mineur",
+    label: "Mineur naturel",
     intervals: [0, 2, 3, 5, 7, 8, 10],
     pentatonicRemovals: [2, 8],
     pentatonicBlueNote: 6,
     relative: { offset: 3, quality: "major" },
+  },
+  harmonicMinor: {
+    label: "Mineur harmonique",
+    intervals: [0, 2, 3, 5, 7, 8, 11],
   },
   phrygianDominant: {
     label: "Phrygien dominant",
