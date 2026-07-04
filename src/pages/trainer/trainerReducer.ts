@@ -8,6 +8,7 @@ export interface TrainerState {
   notes: NoteCandidate[];
   currentIndex: number;
   shouldAutoAdvance: boolean;
+  shouldPlayOnAdvance: boolean;
   isNaturalsOnly: boolean;
   fretMax: number;
   uiState: UiState;
@@ -28,6 +29,7 @@ export const INITIAL_TRAINER_STATE: TrainerState = {
   notes: [],
   currentIndex: -1,
   shouldAutoAdvance: true,
+  shouldPlayOnAdvance: true,
   isNaturalsOnly: true,
   fretMax: DEFAULT_FRET_MAX,
   uiState: "listening",
@@ -44,6 +46,7 @@ export type TrainerAction
     | { type: "advance"; candidate: NoteCandidate }
     | { type: "selectNext"; candidate: NoteCandidate }
     | { type: "setAutoAdvance"; isOn: boolean }
+    | { type: "setPlayOnAdvance"; isOn: boolean }
     | { type: "setNaturalsOnly"; isOn: boolean; candidate: NoteCandidate }
     | { type: "setFretMax"; value: number; candidate: NoteCandidate }
     | { type: "toggleSolution" };
@@ -60,6 +63,10 @@ function focusTo(state: TrainerState, notes: NoteCandidate[], index: number, sho
     advanceDelayMs: null,
     noteToPlayNonce: shouldPlay ? state.noteToPlayNonce + 1 : state.noteToPlayNonce,
   };
+}
+
+function unvalidatedNotes(notes: NoteCandidate[]): NoteCandidate[] {
+  return notes.map((note) => ({ ...note, isValidated: false }));
 }
 
 function regenerate(state: TrainerState, candidate: NoteCandidate): TrainerState {
@@ -107,21 +114,31 @@ export function trainerReducer(state: TrainerState, action: TrainerAction): Trai
     }
 
     case "advance": {
+      const shouldPlay = state.mode === "free" && state.shouldPlayOnAdvance;
       const nextUnvalidated = state.notes.findIndex((note, index) => !note.isValidated && index !== state.currentIndex);
       if (nextUnvalidated >= 0) {
-        return focusTo(state, state.notes, nextUnvalidated, true);
+        return focusTo(state, state.notes, nextUnvalidated, shouldPlay);
       }
 
       if (state.mode === "free") {
-        return focusTo(state, [...state.notes, action.candidate], state.notes.length, true);
+        return focusTo(state, [...state.notes, action.candidate], state.notes.length, shouldPlay);
       }
 
-      return focusTo(state, state.notes, (state.currentIndex + 1) % state.notes.length, true);
+      if (state.notes.every((note) => note.isValidated)) {
+        return focusTo(state, unvalidatedNotes(state.notes), 0, shouldPlay);
+      }
+
+      return focusTo(state, state.notes, (state.currentIndex + 1) % state.notes.length, shouldPlay);
     }
 
     case "selectNext": {
       if (state.mode === "scale") {
-        return focusTo(state, state.notes, (state.currentIndex + 1) % state.notes.length, true);
+        const nextIndex = (state.currentIndex + 1) % state.notes.length;
+        if (nextIndex === 0 && state.notes.every((note) => note.isValidated)) {
+          return focusTo(state, unvalidatedNotes(state.notes), 0, true);
+        }
+
+        return focusTo(state, state.notes, nextIndex, true);
       }
 
       const nextIndex = state.currentIndex + 1;
@@ -134,6 +151,9 @@ export function trainerReducer(state: TrainerState, action: TrainerAction): Trai
 
     case "setAutoAdvance":
       return { ...state, shouldAutoAdvance: action.isOn };
+
+    case "setPlayOnAdvance":
+      return { ...state, shouldPlayOnAdvance: action.isOn };
 
     case "setNaturalsOnly":
       return regenerate({ ...state, isNaturalsOnly: action.isOn }, action.candidate);

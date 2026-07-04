@@ -22,6 +22,7 @@ function initTrainerState(preferences: TrainerPreferences): TrainerState {
     isNaturalsOnly: preferences.isNaturalsOnly,
     fretMax: preferences.fretMax,
     shouldAutoAdvance: preferences.shouldAutoAdvance,
+    shouldPlayOnAdvance: preferences.shouldPlayOnAdvance,
   };
 }
 
@@ -36,6 +37,7 @@ export function useTrainerState(): TrainerStateApi {
       isNaturalsOnly: state.isNaturalsOnly,
       fretMax: state.fretMax,
       shouldAutoAdvance: state.shouldAutoAdvance,
+      shouldPlayOnAdvance: state.shouldPlayOnAdvance,
       scale: scaleState,
     });
   }, [
@@ -43,6 +45,7 @@ export function useTrainerState(): TrainerStateApi {
     state.isNaturalsOnly,
     state.fretMax,
     state.shouldAutoAdvance,
+    state.shouldPlayOnAdvance,
     scaleState,
     setStoredPreferences,
   ]);

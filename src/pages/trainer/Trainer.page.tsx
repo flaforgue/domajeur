@@ -200,6 +200,10 @@ export function Trainer() {
                 onFretMaxChange={(value) => {
                   dispatch({ type: "setFretMax", value, candidate: randomNote(value, state.isNaturalsOnly, lastMidi) });
                 }}
+                shouldPlayOnAdvance={state.shouldPlayOnAdvance}
+                onPlayOnAdvanceChange={(isChecked) => {
+                  dispatch({ type: "setPlayOnAdvance", isOn: isChecked });
+                }}
               />
             )
             : (

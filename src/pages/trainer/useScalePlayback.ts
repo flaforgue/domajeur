@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { useLatest } from "../../hooks/useLatest";
 import type { NoteCandidate } from "../../lib/music/guitar";
 
-const stepMs = 500;
+const stepMs = 750;
 
 interface ScalePlayback {
   play: (notes: NoteCandidate[]) => void;

@@ -8,6 +8,7 @@ export interface TrainerPreferences {
   isNaturalsOnly: boolean;
   fretMax: number;
   shouldAutoAdvance: boolean;
+  shouldPlayOnAdvance: boolean;
   scale: ScaleSelectorState;
 }
 
@@ -16,6 +17,7 @@ const defaultPreferences: TrainerPreferences = {
   isNaturalsOnly: INITIAL_TRAINER_STATE.isNaturalsOnly,
   fretMax: INITIAL_TRAINER_STATE.fretMax,
   shouldAutoAdvance: INITIAL_TRAINER_STATE.shouldAutoAdvance,
+  shouldPlayOnAdvance: INITIAL_TRAINER_STATE.shouldPlayOnAdvance,
   scale: DEFAULT_SCALE_STATE,
 };
 
@@ -55,6 +57,7 @@ function parse(raw: string): TrainerPreferences | null {
     isNaturalsOnly: value.isNaturalsOnly ?? defaultPreferences.isNaturalsOnly,
     fretMax: value.fretMax ?? defaultPreferences.fretMax,
     shouldAutoAdvance: value.shouldAutoAdvance ?? defaultPreferences.shouldAutoAdvance,
+    shouldPlayOnAdvance: value.shouldPlayOnAdvance ?? defaultPreferences.shouldPlayOnAdvance,
     scale: parseScale(value.scale),
   };
 }

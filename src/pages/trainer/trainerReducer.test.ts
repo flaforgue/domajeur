@@ -60,6 +60,38 @@ describe("trainerReducer", () => {
     expect(next.notes).toHaveLength(2);
   });
 
+  it("advance plays the next note in free mode by default", () => {
+    const start = stateWith({ mode: "free", notes: [note(40, true), note(45)], currentIndex: 0 });
+    const next = trainerReducer(start, { type: "advance", candidate: note(50) });
+
+    expect(next.noteToPlayNonce).toBe(start.noteToPlayNonce + 1);
+  });
+
+  it("advance stays silent in free mode when playing on advance is off", () => {
+    const start = stateWith({
+      mode: "free",
+      shouldPlayOnAdvance: false,
+      notes: [note(40, true), note(45)],
+      currentIndex: 0,
+    });
+    const next = trainerReducer(start, { type: "advance", candidate: note(50) });
+
+    expect(next.noteToPlayNonce).toBe(start.noteToPlayNonce);
+  });
+
+  it("advance never plays the next note in scale mode", () => {
+    const start = stateWith({ mode: "scale", notes: [note(40, true), note(45)], currentIndex: 0 });
+    const next = trainerReducer(start, { type: "advance", candidate: note(50) });
+
+    expect(next.noteToPlayNonce).toBe(start.noteToPlayNonce);
+  });
+
+  it("setPlayOnAdvance flips the setting", () => {
+    const next = trainerReducer(stateWith({ shouldPlayOnAdvance: true }), { type: "setPlayOnAdvance", isOn: false });
+
+    expect(next.shouldPlayOnAdvance).toBe(false);
+  });
+
   it("advance appends a fresh note in free mode when all are validated", () => {
     const start = stateWith({ mode: "free", notes: [note(40, true)], currentIndex: 0 });
     const candidate = note(50);
@@ -68,6 +100,32 @@ describe("trainerReducer", () => {
     expect(next.notes).toHaveLength(2);
     expect(next.notes[1]).toBe(candidate);
     expect(next.currentIndex).toBe(1);
+  });
+
+  it("advance restarts a fully validated scale from the first note, to play again", () => {
+    const start = stateWith({ mode: "scale", notes: [note(40, true), note(45, true)], currentIndex: 1 });
+    const next = trainerReducer(start, { type: "advance", candidate: note(50) });
+
+    expect(next.currentIndex).toBe(0);
+    expect(next.uiState).toBe("listening");
+    expect(next.notes.every((n) => !n.isValidated)).toBe(true);
+  });
+
+  it("selectNext restarts a fully validated scale when wrapping past the last note", () => {
+    const start = stateWith({ mode: "scale", notes: [note(40, true), note(45, true)], currentIndex: 1 });
+    const next = trainerReducer(start, { type: "selectNext", candidate: note(50) });
+
+    expect(next.currentIndex).toBe(0);
+    expect(next.uiState).toBe("listening");
+    expect(next.notes.every((n) => !n.isValidated)).toBe(true);
+  });
+
+  it("selectNext keeps validations when wrapping a partially validated scale", () => {
+    const start = stateWith({ mode: "scale", notes: [note(40), note(45, true)], currentIndex: 1 });
+    const next = trainerReducer(start, { type: "selectNext", candidate: note(50) });
+
+    expect(next.currentIndex).toBe(0);
+    expect(next.notes[1].isValidated).toBe(true);
   });
 
   it("selectNext cycles sequentially in scale mode, ignoring validation", () => {
