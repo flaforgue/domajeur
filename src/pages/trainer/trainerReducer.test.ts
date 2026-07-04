@@ -109,6 +109,7 @@ describe("trainerReducer", () => {
     expect(next.currentIndex).toBe(0);
     expect(next.uiState).toBe("listening");
     expect(next.notes.every((n) => !n.isValidated)).toBe(true);
+    expect(next.notes[0]).not.toBe(start.notes[0]);
   });
 
   it("selectNext restarts a fully validated scale when wrapping past the last note", () => {

@@ -127,7 +127,7 @@ export function Trainer() {
 
   const isRevisitedInAutoMode = state.uiState === "success" && state.shouldAutoAdvance;
   useNoteValidation({
-    targetMidi: currentNote?.midi ?? null,
+    target: currentNote,
     isActive: currentNote !== null && (state.uiState === "listening" || isRevisitedInAutoMode),
     onValidated: () => {
       if (currentNote?.isValidated === true) {
