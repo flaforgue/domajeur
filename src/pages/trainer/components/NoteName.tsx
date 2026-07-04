@@ -1,14 +1,14 @@
-import { namedNoteFromMidi } from "../../../lib/music/notation";
+import { namedNoteFromMidi, type NoteSpelling } from "../../../lib/music/notation";
 import { useNotation } from "../../../hooks/useNotation";
 
-export function NoteName({ midi }: { midi: number }) {
+export function NoteName({ midi, spelling }: { midi: number; spelling?: NoteSpelling }) {
   const [notation] = useNotation();
-  const named = namedNoteFromMidi(midi, notation);
+  const named = namedNoteFromMidi(midi, notation, spelling);
 
   return (
     <>
       {named.baseName}
-      {named.isSharp && (
+      {named.accidental !== "" && (
         <small
           className={`
             align-[0.55em]
@@ -16,7 +16,7 @@ export function NoteName({ midi }: { midi: number }) {
             text-brass
           `}
         >
-          ♯
+          {named.accidental}
         </small>
       )}
       <span

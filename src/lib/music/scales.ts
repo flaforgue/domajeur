@@ -1,4 +1,4 @@
-import { pitchClassFromMidi } from "./notation";
+import { pitchClassFromMidi, type NoteSpelling } from "./notation";
 import {
   canonicalStringPositionFromMidi,
   HIGHEST_CANONICAL_MIDI,
@@ -53,6 +53,7 @@ export function isScaleQuality(value: unknown): value is ScaleQuality {
 
 export interface ScaleConfig {
   root: number;
+  rootNatural?: number; // pitch class of the root's letter (2 for Ré♭); defaults to the sharp spelling
   quality: ScaleQuality;
   size: ScaleSize;
   variant: ScaleVariant;
@@ -87,6 +88,34 @@ export function scaleIntervals(config: ScaleConfig): number[] {
   return [...intervals].sort((a, b) => a - b);
 }
 
+const letterPitchClasses = [0, 2, 4, 5, 7, 9, 11];
+
+export function scaleSpellings(config: ScaleConfig): Map<number, NoteSpelling> {
+  const mode = modes[config.quality];
+  const rootNatural = config.rootNatural
+    ?? (letterPitchClasses.includes(config.root) ? config.root : config.root - 1);
+  const rootLetterIndex = letterPitchClasses.indexOf(rootNatural);
+
+  const spellings = new Map<number, NoteSpelling>();
+  mode.intervals.forEach((interval, degree) => {
+    const natural = letterPitchClasses[(rootLetterIndex + degree) % letterPitchClasses.length];
+    const pitchClass = (config.root + interval) % 12;
+    const alteration = ((pitchClass - natural + 18) % 12) - 6;
+    spellings.set(pitchClass, { natural, alteration });
+  });
+
+  // The blue note borrows the letter of the degree above it, flattened (♭5 of La mineur is Mi♭).
+  if (mode.pentatonicBlueNote !== undefined) {
+    const bluePitchClass = (config.root + mode.pentatonicBlueNote) % 12;
+    const degreeAbove = spellings.get((bluePitchClass + 1) % 12);
+    if (degreeAbove !== undefined && !spellings.has(bluePitchClass)) {
+      spellings.set(bluePitchClass, { natural: degreeAbove.natural, alteration: degreeAbove.alteration - 1 });
+    }
+  }
+
+  return spellings;
+}
+
 function rootMidiFor(root: number): number {
   let rootMidi = LOWEST_PLAYABLE_MIDI;
   while (pitchClassFromMidi(rootMidi) !== root) {
@@ -99,6 +128,7 @@ function rootMidiFor(root: number): number {
 export function scaleNotesFromConfig(config: ScaleConfig, octaves = 1): NoteCandidate[] {
   const rootMidi = rootMidiFor(config.root);
   const intervals = scaleIntervals(config);
+  const spellings = scaleSpellings(config);
 
   return Array.from({ length: octaves }, (_, octave) => octave).flatMap((octave) =>
     intervals.map((interval) => {
@@ -109,6 +139,7 @@ export function scaleNotesFromConfig(config: ScaleConfig, octaves = 1): NoteCand
         stringIndex: position.stringIndex,
         fretIndex: position.fretIndex,
         midi,
+        spelling: spellings.get(pitchClassFromMidi(midi)),
         isValidated: false,
       };
     }),

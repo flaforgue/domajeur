@@ -307,7 +307,7 @@ export function Trainer() {
           title="Validation au micro"
           feature="Active le micro pour valider les notes que tu joues."
         >
-          <LiveReadout targetMidi={currentNote?.midi ?? null} />
+          <LiveReadout targetMidi={currentNote?.midi ?? null} targetSpelling={currentNote?.spelling} />
         </MicGate>
 
         <Flex gap={3} className="w-full">

@@ -1,4 +1,4 @@
-import { type Notation, pitchClassFromMidi, pitchClassName } from "./notation";
+import { type Notation, type NoteSpelling, pitchClassFromMidi, pitchClassName } from "./notation";
 
 export const STRINGS: { midi: number; suffix: string }[] = [
   { midi: 40, suffix: " grave" }, // E2
@@ -18,7 +18,7 @@ export const HIGHEST_CANONICAL_MIDI = STRINGS[STRINGS.length - 1].midi + maxFret
 
 export interface StringPosition { stringIndex: number; fretIndex: number }
 export interface ScaleMarker extends StringPosition { isRoot: boolean }
-interface Note { stringIndex: number; fretIndex: number; midi: number }
+interface Note { stringIndex: number; fretIndex: number; midi: number; spelling?: NoteSpelling }
 export type NoteCandidate = Note & { isValidated: boolean };
 
 export function stringName(stringIndex: number, notation: Notation): string {

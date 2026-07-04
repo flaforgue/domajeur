@@ -1,10 +1,13 @@
 import { describe, it, expect } from "vitest";
+import { namedNoteFromMidi } from "./notation";
 import {
   isScaleQuality,
   maxPlayableOctaves,
   relativeScale,
   scaleIntervals,
   scaleNotesFromConfig,
+  scaleSpellings,
+  SCALE_QUALITIES,
   type ScaleConfig,
 } from "./scales";
 
@@ -150,6 +153,52 @@ describe("scales.ts", () => {
         40, 42, 44, 45, 47, 49, 51,
         52, 54, 56, 57, 59, 61, 63,
       ]);
+    });
+  });
+
+  describe("scaleSpellings", () => {
+    const pitchNames = (overrides: Partial<ScaleConfig>): string[] =>
+      scaleNotesFromConfig(config(overrides)).map(
+        (note) => namedNoteFromMidi(note.midi, "french", note.spelling).pitchName,
+      );
+
+    it("spells C harmonic minor with flats, never reusing a letter", () => {
+      expect(pitchNames({ quality: "harmonicMinor" }))
+        .toEqual(["Do", "Ré", "Mi♭", "Fa", "Sol", "La♭", "Si"]);
+    });
+
+    it("spells the natural minor scale with flats", () => {
+      expect(pitchNames({ quality: "minor" }))
+        .toEqual(["Do", "Ré", "Mi♭", "Fa", "Sol", "La♭", "Si♭"]);
+    });
+
+    it("follows the root's own spelling for enharmonic roots", () => {
+      expect(pitchNames({ root: 1, rootNatural: 2 }))
+        .toEqual(["Ré♭", "Mi♭", "Fa", "Sol♭", "La♭", "Si♭", "Do"]);
+      expect(pitchNames({ root: 1, rootNatural: 0 }))
+        .toEqual(["Do♯", "Ré♯", "Mi♯", "Fa♯", "Sol♯", "La♯", "Si♯"]);
+    });
+
+    it("uses a double sharp where the key demands it", () => {
+      expect(pitchNames({ root: 8, rootNatural: 7, quality: "harmonicMinor" }))
+        .toEqual(["Sol♯", "La♯", "Si", "Do♯", "Ré♯", "Mi", "Fa𝄪"]);
+    });
+
+    it("spells the blue note as the flattened degree above", () => {
+      expect(pitchNames({ root: 9, quality: "minor", size: "pentatonic", variant: "blues" }))
+        .toEqual(["La", "Do", "Ré", "Mi♭", "Mi", "Sol"]);
+      expect(pitchNames({ size: "pentatonic", variant: "blues" }))
+        .toEqual(["Do", "Ré", "Mi♭", "Mi", "Sol", "La"]);
+    });
+
+    it("uses each of the seven letters exactly once for every root and quality", () => {
+      for (const quality of SCALE_QUALITIES) {
+        for (let root = 0; root < 12; root++) {
+          const spellings = scaleSpellings(config({ root, quality }));
+          const letters = [...spellings.values()].map((spelling) => spelling.natural);
+          expect(new Set(letters).size).toBe(7);
+        }
+      }
     });
   });
 

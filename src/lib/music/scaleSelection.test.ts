@@ -97,6 +97,14 @@ describe("scaleSeriesFromState", () => {
     expect(series[7].midi).toBe(series[0].midi + 12);
   });
 
+  it("spells the series according to the chosen root spelling", () => {
+    const sharpSeries = scaleSeriesFromState(makeState({ rootIndex: doSharpIndex }));
+    const flatSeries = scaleSeriesFromState(makeState({ rootIndex: reFlatIndex }));
+
+    expect(sharpSeries[0].spelling).toEqual({ natural: 0, alteration: 1 });
+    expect(flatSeries[0].spelling).toEqual({ natural: 2, alteration: -1 });
+  });
+
   it("starts every note unvalidated", () => {
     const series = scaleSeriesFromState(makeState());
 

@@ -50,6 +50,7 @@ export const DEFAULT_SCALE_STATE: ScaleSelectorState = {
 export function scaleConfigFromState(state: ScaleSelectorState): ScaleConfig {
   return {
     root: SCALE_ROOTS[state.rootIndex].pitchClass,
+    rootNatural: SCALE_ROOTS[state.rootIndex].natural,
     quality: state.quality,
     size: state.size,
     variant: state.variant,

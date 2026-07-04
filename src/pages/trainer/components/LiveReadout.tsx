@@ -1,4 +1,4 @@
-import { namedNoteFromMidi, type Notation } from "../../../lib/music/notation";
+import { namedNoteFromMidi, type Notation, type NoteSpelling } from "../../../lib/music/notation";
 import { detectedNoteFromFrame } from "../../../lib/pitch/detectedNote";
 import type { Frame } from "../../../lib/pitch/pitchEngine";
 import { useEngineSelector } from "../../../hooks/useEngineSelector";
@@ -20,7 +20,12 @@ interface Readout {
   clarity: number;
 }
 
-function computeReadout(frame: Frame, notation: Notation, targetMidi: number | null): Readout {
+function computeReadout(
+  frame: Frame,
+  notation: Notation,
+  targetMidi: number | null,
+  targetSpelling: NoteSpelling | undefined,
+): Readout {
   const level = Math.round(clamp(frame.rootMeanSquare / maxInputRootmeanSquare, 0, 1) * 100) / 100;
   const silent: Readout = {
     kind: "idle",
@@ -41,12 +46,14 @@ function computeReadout(frame: Frame, notation: Notation, targetMidi: number | n
     return silent;
   }
 
+  const isMatch = targetMidi !== null && detected.midi === targetMidi;
+
   return {
     kind: "note",
-    label: namedNoteFromMidi(detected.midi, notation).name,
+    label: namedNoteFromMidi(detected.midi, notation, isMatch ? targetSpelling : undefined).name,
     cents: detected.cents,
     frequency: Number(frame.frequencyInHertz.toFixed(1)),
-    isMatch: targetMidi !== null && detected.midi === targetMidi,
+    isMatch,
     level,
     clarity: Math.round(frame.clarity * 100) / 100,
   };
@@ -54,11 +61,12 @@ function computeReadout(frame: Frame, notation: Notation, targetMidi: number | n
 
 interface Props {
   targetMidi: number | null;
+  targetSpelling?: NoteSpelling;
 }
 
-export function LiveReadout({ targetMidi }: Props) {
+export function LiveReadout({ targetMidi, targetSpelling }: Props) {
   const [notation] = useNotation();
-  const readout = useEngineSelector((frame) => computeReadout(frame, notation, targetMidi));
+  const readout = useEngineSelector((frame) => computeReadout(frame, notation, targetMidi, targetSpelling));
 
   return (
     <Flex

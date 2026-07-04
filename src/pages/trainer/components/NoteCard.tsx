@@ -79,7 +79,7 @@ export function NoteCard({
                   `, noteSizeClass, isCheckVisible && "opacity-20")}
                 >
                   {note !== null
-                    ? <NoteName midi={note.midi} />
+                    ? <NoteName midi={note.midi} spelling={note.spelling} />
                     : <span className="text-pearl-faint">—</span>}
                 </div>
                 {isCheckVisible && (

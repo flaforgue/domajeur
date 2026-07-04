@@ -8,6 +8,20 @@ const semitonesPerOctave = 12;
 const a4FrequencyHz = 440;
 const a4Midi = 69;
 
+export interface NoteSpelling {
+  natural: number; // pitch class of the letter (0, 2, 4, 5, 7, 9 or 11)
+  alteration: number; // semitones added by the accidental, from -2 (𝄫) to 2 (𝄪)
+}
+
+const accidentalGlyphs = ["𝄫", "♭", "", "♯", "𝄪"];
+const naturalPitchClasses = new Set([0, 2, 4, 5, 7, 9, 11]);
+
+function defaultSpelling(pitchClass: number): NoteSpelling {
+  return naturalPitchClasses.has(pitchClass)
+    ? { natural: pitchClass, alteration: 0 }
+    : { natural: pitchClass - 1, alteration: 1 };
+}
+
 export function pitchClassFromMidi(midi: number): number {
   return ((midi % semitonesPerOctave) + semitonesPerOctave) % semitonesPerOctave;
 }
@@ -32,17 +46,19 @@ export interface NamedNote {
   pitchClass: number;
   octave: number;
   baseName: string;
-  isSharp: boolean;
+  accidental: string;
   pitchName: string;
   name: string;
 }
 
-export function namedNoteFromMidi(midi: number, notation: Notation): NamedNote {
+export function namedNoteFromMidi(midi: number, notation: Notation, spelling?: NoteSpelling): NamedNote {
   const pitchClass = pitchClassFromMidi(midi);
-  const octave = Math.floor(midi / semitonesPerOctave) - 1;
-  const pitchName = pitchClassName(pitchClass, notation);
-  const isSharp = pitchName.endsWith("♯");
-  const baseName = isSharp ? pitchName.slice(0, -1) : pitchName;
+  const { natural, alteration } = spelling ?? defaultSpelling(pitchClass);
+  // The octave follows the letter, so Si♯3 and Do4 share MIDI 60.
+  const octave = Math.floor((midi - alteration) / semitonesPerOctave) - 1;
+  const baseName = pitchClassName(natural, notation);
+  const accidental = accidentalGlyphs[alteration + 2];
+  const pitchName = baseName + accidental;
 
-  return { pitchClass, octave, baseName, isSharp, pitchName, name: `${pitchName}${octave}` };
+  return { pitchClass, octave, baseName, accidental, pitchName, name: `${pitchName}${octave}` };
 }

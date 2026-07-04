@@ -59,18 +59,33 @@ describe("notation.ts", () => {
         pitchClass: 0,
         octave: 4,
         baseName: "Do",
-        isSharp: false,
+        accidental: "",
         pitchName: "Do",
         name: "Do4",
       });
     });
 
-    it("names a sharp", () => {
+    it("defaults to the sharp spelling", () => {
       const named = namedNoteFromMidi(61, "international");
       expect(named.name).toBe("C♯4");
       expect(named.pitchName).toBe("C♯");
       expect(named.baseName).toBe("C");
-      expect(named.isSharp).toBe(true);
+      expect(named.accidental).toBe("♯");
+    });
+
+    it("honors an explicit spelling", () => {
+      expect(namedNoteFromMidi(63, "french", { natural: 4, alteration: -1 }).name).toBe("Mi♭4");
+      expect(namedNoteFromMidi(63, "international", { natural: 4, alteration: -1 }).name).toBe("E♭4");
+    });
+
+    it("supports double accidentals", () => {
+      expect(namedNoteFromMidi(55, "french", { natural: 5, alteration: 2 }).name).toBe("Fa𝄪3");
+      expect(namedNoteFromMidi(57, "french", { natural: 11, alteration: -2 }).name).toBe("Si𝄫3");
+    });
+
+    it("keeps the octave of the letter, not of the sounding pitch", () => {
+      expect(namedNoteFromMidi(60, "french", { natural: 11, alteration: 1 }).name).toBe("Si♯3");
+      expect(namedNoteFromMidi(59, "french", { natural: 0, alteration: -1 }).name).toBe("Do♭4");
     });
   });
 

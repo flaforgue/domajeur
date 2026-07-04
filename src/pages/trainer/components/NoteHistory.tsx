@@ -41,7 +41,7 @@ export function NoteHistory({ notes, currentIndex, onSelect }: Props) {
             onSelect(index);
           }}
         >
-          {namedNoteFromMidi(note.midi, notation).name}
+          {namedNoteFromMidi(note.midi, notation, note.spelling).name}
         </ChipButton>
       ))}
     </Flex>
