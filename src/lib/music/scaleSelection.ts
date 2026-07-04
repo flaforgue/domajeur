@@ -22,6 +22,7 @@ export const SCALE_ROOTS: { pitchClass: number; natural: number; accidental: str
   { pitchClass: 4, natural: 4, accidental: "" },
   { pitchClass: 5, natural: 5, accidental: "" },
   { pitchClass: 6, natural: 5, accidental: "♯" },
+  { pitchClass: 6, natural: 7, accidental: "♭" },
   { pitchClass: 7, natural: 7, accidental: "" },
   { pitchClass: 8, natural: 7, accidental: "♯" },
   { pitchClass: 8, natural: 9, accidental: "♭" },
@@ -29,6 +30,7 @@ export const SCALE_ROOTS: { pitchClass: number; natural: number; accidental: str
   { pitchClass: 10, natural: 9, accidental: "♯" },
   { pitchClass: 10, natural: 11, accidental: "♭" },
   { pitchClass: 11, natural: 11, accidental: "" },
+  { pitchClass: 11, natural: 0, accidental: "♭" },
 ];
 
 export interface ScaleSelectorState {

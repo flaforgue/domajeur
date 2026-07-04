@@ -11,9 +11,13 @@ import {
 const doIndex = 0;
 const doSharpIndex = 1;
 const reFlatIndex = 2;
-const laIndex = 12;
-const laSharpIndex = 13;
-const siFlatIndex = 14;
+const miFlatIndex = 5;
+const solFlatIndex = 9;
+const laFlatIndex = 12;
+const laIndex = 13;
+const laSharpIndex = 14;
+const siFlatIndex = 15;
+const doFlatIndex = 17;
 
 function makeState(overrides: Partial<ScaleSelectorState> = {}): ScaleSelectorState {
   return { ...DEFAULT_SCALE_STATE, ...overrides };
@@ -68,6 +72,15 @@ describe("relativeScaleState", () => {
     const relative = relativeScaleState(makeState({ rootIndex, quality: "major" }));
 
     expect(relative.rootIndex).toBe(expectedRootIndex);
+  });
+
+  it.each([
+    ["Mi♭ mineur", miFlatIndex, "Sol♭ majeur", solFlatIndex],
+    ["La♭ mineur", laFlatIndex, "Do♭ majeur", doFlatIndex],
+  ])("sends %s to %s rather than its sharp twin", (_minor, rootIndex, _major, expectedRootIndex) => {
+    const relative = relativeScaleState(makeState({ rootIndex, quality: "minor" }));
+
+    expect(relative).toMatchObject({ rootIndex: expectedRootIndex, quality: "major" });
   });
 
   it("returns the state unchanged when the quality has no relative", () => {

@@ -1,6 +1,11 @@
 import { createPersistedStore } from "../../hooks/createPersistedStore";
 import { isScaleQuality } from "../../lib/music/scales";
-import { clampScaleState, DEFAULT_SCALE_STATE, type ScaleSelectorState } from "../../lib/music/scaleSelection";
+import {
+  clampScaleState,
+  DEFAULT_SCALE_STATE,
+  SCALE_ROOTS,
+  type ScaleSelectorState,
+} from "../../lib/music/scaleSelection";
 import { INITIAL_TRAINER_STATE, type TrainerMode } from "./trainerReducer";
 
 export interface TrainerPreferences {
@@ -27,9 +32,14 @@ function parseScale(value: unknown): ScaleSelectorState {
   }
 
   const scale = value as Partial<ScaleSelectorState>;
+  const rawRootIndex = scale.rootIndex;
+  const isValidRootIndex = typeof rawRootIndex === "number"
+    && Number.isInteger(rawRootIndex)
+    && rawRootIndex >= 0
+    && rawRootIndex < SCALE_ROOTS.length;
 
   return clampScaleState({
-    rootIndex: scale.rootIndex ?? DEFAULT_SCALE_STATE.rootIndex,
+    rootIndex: isValidRootIndex ? rawRootIndex : DEFAULT_SCALE_STATE.rootIndex,
     quality: isScaleQuality(scale.quality) ? scale.quality : DEFAULT_SCALE_STATE.quality,
     size: scale.size === "pentatonic" ? "pentatonic" : "heptatonic",
     variant: scale.variant === "blues" ? "blues" : "standard",
