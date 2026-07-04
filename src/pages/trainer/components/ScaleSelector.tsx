@@ -1,4 +1,4 @@
-import { ArrowLeftRightIcon } from "lucide-react";
+import { InfoIcon, MoveDiagonal2Icon } from "lucide-react";
 import { pitchClassName } from "../../../lib/music/notation";
 import {
   maxPlayableOctaves,
@@ -103,7 +103,7 @@ export function ScaleSelector({ state, onChange }: Props) {
               onChange(clampScaleState(relativeScaleState(state)));
             }}
           >
-            <ArrowLeftRightIcon width="16" height="16" />
+            <MoveDiagonal2Icon width="16" height="16" />
           </button>
         )}
       </Flex>
@@ -140,7 +140,25 @@ export function ScaleSelector({ state, onChange }: Props) {
           onChange({ ...state, isRoundTrip: isChecked });
         }}
       >
-        Aller-retour (montée puis descente)
+        <span
+          className={`
+            flex
+            items-center
+            gap-1
+          `}
+        >
+          Aller-retour
+          <InfoIcon
+            width="14"
+            height="14"
+            className={`
+              cursor-help
+              text-pearl-faint
+            `}
+            data-tooltip-id={HELP_TOOLTIP_ID}
+            data-tooltip-content="Jouer la gamme en mode ascendant puis descendant."
+          />
+        </span>
       </ToggleSwitch>
     </>
   );

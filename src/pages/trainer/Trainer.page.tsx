@@ -200,6 +200,10 @@ export function Trainer() {
                 onFretMaxChange={(value) => {
                   dispatch({ type: "setFretMax", value, candidate: randomNote(value, state.isNaturalsOnly, lastMidi) });
                 }}
+                shouldAutoAdvance={state.shouldAutoAdvance}
+                onAutoAdvanceChange={(isChecked) => {
+                  dispatch({ type: "setAutoAdvance", isOn: isChecked });
+                }}
                 shouldPlayOnAdvance={state.shouldPlayOnAdvance}
                 onPlayOnAdvanceChange={(isChecked) => {
                   dispatch({ type: "setPlayOnAdvance", isOn: isChecked });
@@ -207,7 +211,17 @@ export function Trainer() {
               />
             )
             : (
-              <ScaleSelector state={scaleState} onChange={changeScale} />
+              <>
+                <ScaleSelector state={scaleState} onChange={changeScale} />
+                <ToggleSwitch
+                  isChecked={state.shouldAutoAdvance}
+                  onChange={(isChecked) => {
+                    dispatch({ type: "setAutoAdvance", isOn: isChecked });
+                  }}
+                >
+                  Enchaînement auto
+                </ToggleSwitch>
+              </>
             )}
         </Panel>
 
@@ -256,14 +270,6 @@ export function Trainer() {
             </span>
           </Flex>
 
-          <ToggleSwitch
-            isChecked={state.shouldAutoAdvance}
-            onChange={(isChecked) => {
-              dispatch({ type: "setAutoAdvance", isOn: isChecked });
-            }}
-          >
-            Enchaînement auto
-          </ToggleSwitch>
         </Flex>
 
         <NoteHistory

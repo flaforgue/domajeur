@@ -7,6 +7,8 @@ interface Props {
   onNaturalsOnlyChange: (value: boolean) => void;
   fretMax: number;
   onFretMaxChange: (value: number) => void;
+  shouldAutoAdvance: boolean;
+  onAutoAdvanceChange: (value: boolean) => void;
   shouldPlayOnAdvance: boolean;
   onPlayOnAdvanceChange: (value: boolean) => void;
 }
@@ -16,35 +18,13 @@ export function FreeModeSettings({
   onNaturalsOnlyChange,
   fretMax,
   onFretMaxChange,
+  shouldAutoAdvance,
+  onAutoAdvanceChange,
   shouldPlayOnAdvance,
   onPlayOnAdvanceChange,
 }: Props) {
   return (
     <>
-      <ToggleSwitch isChecked={isNaturalsOnly} onChange={onNaturalsOnlyChange}>
-        Notes naturelles
-      </ToggleSwitch>
-      <ToggleSwitch isChecked={shouldPlayOnAdvance} onChange={onPlayOnAdvanceChange}>
-        <span
-          className={`
-            flex
-            items-center
-            gap-1
-          `}
-        >
-          Jouer la note suivante
-          <InfoIcon
-            width="14"
-            height="14"
-            className={`
-              cursor-help
-              text-pearl-faint
-            `}
-            data-tooltip-id={HELP_TOOLTIP_ID}
-            data-tooltip-content="Joue la note de référence quand l'enchaînement automatique passe à la note suivante."
-          />
-        </span>
-      </ToggleSwitch>
       <label
         className={`
           flex
@@ -106,6 +86,33 @@ export function FreeModeSettings({
           </span>
         </span>
       </label>
+      <ToggleSwitch isChecked={isNaturalsOnly} onChange={onNaturalsOnlyChange}>
+        Notes naturelles
+      </ToggleSwitch>
+      <ToggleSwitch isChecked={shouldAutoAdvance} onChange={onAutoAdvanceChange}>
+        Enchaînement auto
+      </ToggleSwitch>
+      <ToggleSwitch isChecked={shouldPlayOnAdvance} onChange={onPlayOnAdvanceChange}>
+        <span
+          className={`
+            flex
+            items-center
+            gap-1
+          `}
+        >
+          Jouer la note suivante
+          <InfoIcon
+            width="14"
+            height="14"
+            className={`
+              cursor-help
+              text-pearl-faint
+            `}
+            data-tooltip-id={HELP_TOOLTIP_ID}
+            data-tooltip-content="Joue la note de référence quand l'enchaînement automatique passe à la note suivante."
+          />
+        </span>
+      </ToggleSwitch>
     </>
   );
 }
