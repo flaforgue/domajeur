@@ -163,6 +163,7 @@ export function Trainer() {
           gap-3.5
 
           max-md:static
+          max-md:order-last
           max-md:max-h-none
           max-md:w-full
         `}
