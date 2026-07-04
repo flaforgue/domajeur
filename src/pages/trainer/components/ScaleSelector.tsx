@@ -1,4 +1,4 @@
-import { InfoIcon, MoveDiagonal2Icon } from "lucide-react";
+import { MoveDiagonal2Icon } from "lucide-react";
 import { spellingName } from "../../../lib/music/notation";
 import {
   maxPlayableOctaves,
@@ -23,6 +23,7 @@ import { Flex } from "../../../components/layout/Flex";
 import { Select } from "../../../components/inputs/Select";
 import { ToggleSwitch } from "../../../components/inputs/ToggleSwitch";
 import { HELP_TOOLTIP_ID } from "../../../components/HelpTooltip";
+import { HintedLabel } from "../../../components/HintedLabel";
 
 const qualityOptions: { value: ScaleQuality; label: string }[] = SCALE_QUALITIES.map((quality) => ({
   value: quality,
@@ -140,25 +141,9 @@ export function ScaleSelector({ state, onChange }: Props) {
           onChange({ ...state, isRoundTrip: isChecked });
         }}
       >
-        <span
-          className={`
-            flex
-            items-center
-            gap-1
-          `}
-        >
+        <HintedLabel hint="Jouer la gamme en mode ascendant puis descendant.">
           Aller-retour
-          <InfoIcon
-            width="14"
-            height="14"
-            className={`
-              cursor-help
-              text-pearl-faint
-            `}
-            data-tooltip-id={HELP_TOOLTIP_ID}
-            data-tooltip-content="Jouer la gamme en mode ascendant puis descendant."
-          />
-        </span>
+        </HintedLabel>
       </ToggleSwitch>
     </>
   );

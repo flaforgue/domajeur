@@ -1,6 +1,5 @@
-import { InfoIcon } from "lucide-react";
 import { ToggleSwitch } from "../../../components/inputs/ToggleSwitch";
-import { HELP_TOOLTIP_ID } from "../../../components/HelpTooltip";
+import { HintedLabel } from "../../../components/HintedLabel";
 
 interface Props {
   isNaturalsOnly: boolean;
@@ -36,25 +35,9 @@ export function FreeModeSettings({
           text-pearl-dim
         `}
       >
-        <span
-          className={`
-            flex
-            items-center
-            gap-1
-          `}
-        >
+        <HintedLabel hint="Frette la plus haute utilisée pour générer les notes (0 = uniquement les cordes à vide).">
           Frettes max
-          <InfoIcon
-            width="14"
-            height="14"
-            className={`
-              cursor-help
-              text-pearl-faint
-            `}
-            data-tooltip-id={HELP_TOOLTIP_ID}
-            data-tooltip-content="Frette la plus haute utilisée pour générer les notes (0 = uniquement les cordes à vide)."
-          />
-        </span>
+        </HintedLabel>
         <span
           className={`
             flex
@@ -93,25 +76,9 @@ export function FreeModeSettings({
         Enchaînement auto
       </ToggleSwitch>
       <ToggleSwitch isChecked={shouldPlayOnAdvance} onChange={onPlayOnAdvanceChange}>
-        <span
-          className={`
-            flex
-            items-center
-            gap-1
-          `}
-        >
+        <HintedLabel hint="Joue la note de référence quand l'enchaînement automatique passe à la note suivante.">
           Jouer la note suivante
-          <InfoIcon
-            width="14"
-            height="14"
-            className={`
-              cursor-help
-              text-pearl-faint
-            `}
-            data-tooltip-id={HELP_TOOLTIP_ID}
-            data-tooltip-content="Joue la note de référence quand l'enchaînement automatique passe à la note suivante."
-          />
-        </span>
+        </HintedLabel>
       </ToggleSwitch>
     </>
   );
