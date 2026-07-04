@@ -47,6 +47,16 @@ describe("trainerReducer", () => {
     expect(next.advanceDelayMs).toBeNull();
   });
 
+  it("validateCurrent in scale mode fires the confetti only when the series is complete", () => {
+    const midSeries = stateWith({ mode: "scale", notes: [note(40), note(45)], currentIndex: 0 });
+    expect(trainerReducer(midSeries, { type: "validateCurrent" }).validationNonce)
+      .toBe(midSeries.validationNonce);
+
+    const lastNote = stateWith({ mode: "scale", notes: [note(40, true), note(45)], currentIndex: 1 });
+    expect(trainerReducer(lastNote, { type: "validateCurrent" }).validationNonce)
+      .toBe(lastNote.validationNonce + 1);
+  });
+
   it("validateCurrent is a no-op on an already validated note", () => {
     const start = stateWith({ notes: [note(40, true)], currentIndex: 0 });
     expect(trainerReducer(start, { type: "validateCurrent" })).toBe(start);

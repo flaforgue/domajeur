@@ -102,7 +102,8 @@ export function trainerReducer(state: TrainerState, action: TrainerAction): Trai
       const notes = state.notes.map((note, index) => (
         index === state.currentIndex ? { ...note, isValidated: true } : note
       ));
-      const validationNonce = state.validationNonce + 1;
+      const isCelebrated = state.mode === "free" || notes.every((note) => note.isValidated);
+      const validationNonce = isCelebrated ? state.validationNonce + 1 : state.validationNonce;
 
       if (state.shouldAutoAdvance) {
         const advanceDelayMs = state.mode === "scale" ? scaleDelayBetweenNotesMs : delayBetweenNotesMs;
