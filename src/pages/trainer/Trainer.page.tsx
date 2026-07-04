@@ -242,13 +242,12 @@ export function Trainer() {
           </Button>
         )}
 
-        <Flex
-          align="center"
-          justify="between"
-          gap={2}
-          className="my-2"
-        >
-          <Flex align="baseline" gap={2}>
+        {state.mode === "free" && (
+          <Flex
+            align="baseline"
+            gap={2}
+            className="my-2"
+          >
             <span
               className={`
                 font-display
@@ -269,8 +268,7 @@ export function Trainer() {
               validées
             </span>
           </Flex>
-
-        </Flex>
+        )}
 
         <NoteHistory
           notes={state.notes}
