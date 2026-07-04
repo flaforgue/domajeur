@@ -48,7 +48,7 @@ function parseScale(value: unknown): ScaleSelectorState {
   });
 }
 
-function parse(raw: string): TrainerPreferences | null {
+export function parseTrainerPreferences(raw: string): TrainerPreferences | null {
   let data: unknown;
   try {
     data = JSON.parse(raw);
@@ -75,7 +75,7 @@ function parse(raw: string): TrainerPreferences | null {
 const useTrainerPreferencesStore = createPersistedStore<TrainerPreferences>(
   "domajeur:trainer",
   defaultPreferences,
-  parse,
+  parseTrainerPreferences,
   (preferences) => JSON.stringify(preferences),
 );
 
