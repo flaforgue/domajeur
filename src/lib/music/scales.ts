@@ -1,4 +1,4 @@
-import { pitchClassFromMidi, type NoteSpelling } from "./notation";
+import { NATURAL_PITCH_CLASSES, pitchClassFromMidi, type NoteSpelling } from "./notation";
 import {
   canonicalStringPositionFromMidi,
   HIGHEST_CANONICAL_MIDI,
@@ -88,17 +88,15 @@ export function scaleIntervals(config: ScaleConfig): number[] {
   return [...intervals].sort((a, b) => a - b);
 }
 
-const letterPitchClasses = [0, 2, 4, 5, 7, 9, 11];
-
 export function scaleSpellings(config: ScaleConfig): Map<number, NoteSpelling> {
   const mode = modes[config.quality];
   const rootNatural = config.rootNatural
-    ?? (letterPitchClasses.includes(config.root) ? config.root : config.root - 1);
-  const rootLetterIndex = letterPitchClasses.indexOf(rootNatural);
+    ?? (NATURAL_PITCH_CLASSES.includes(config.root) ? config.root : config.root - 1);
+  const rootLetterIndex = NATURAL_PITCH_CLASSES.indexOf(rootNatural);
 
   const spellings = new Map<number, NoteSpelling>();
   mode.intervals.forEach((interval, degree) => {
-    const natural = letterPitchClasses[(rootLetterIndex + degree) % letterPitchClasses.length];
+    const natural = NATURAL_PITCH_CLASSES[(rootLetterIndex + degree) % NATURAL_PITCH_CLASSES.length];
     const pitchClass = (config.root + interval) % 12;
     const alteration = ((pitchClass - natural + 18) % 12) - 6;
     spellings.set(pitchClass, { natural, alteration });

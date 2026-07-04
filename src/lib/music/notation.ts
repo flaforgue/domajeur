@@ -14,12 +14,17 @@ export interface NoteSpelling {
 }
 
 const accidentalGlyphs = ["𝄫", "♭", "", "♯", "𝄪"];
-const naturalPitchClasses = new Set([0, 2, 4, 5, 7, 9, 11]);
+
+export const NATURAL_PITCH_CLASSES = [0, 2, 4, 5, 7, 9, 11];
 
 function defaultSpelling(pitchClass: number): NoteSpelling {
-  return naturalPitchClasses.has(pitchClass)
+  return NATURAL_PITCH_CLASSES.includes(pitchClass)
     ? { natural: pitchClass, alteration: 0 }
     : { natural: pitchClass - 1, alteration: 1 };
+}
+
+export function spellingName(spelling: NoteSpelling, notation: Notation): string {
+  return pitchClassName(spelling.natural, notation) + accidentalGlyphs[spelling.alteration + 2];
 }
 
 export function pitchClassFromMidi(midi: number): number {

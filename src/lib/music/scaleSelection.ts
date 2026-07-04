@@ -1,4 +1,5 @@
 import { clamp } from "../math";
+import { pitchClassFromMidi, type NoteSpelling } from "./notation";
 import type { NoteCandidate } from "./guitar";
 import {
   maxPlayableOctaves,
@@ -12,26 +13,30 @@ import {
   type ScaleVariant,
 } from "./scales";
 
-export const SCALE_ROOTS: { pitchClass: number; natural: number; accidental: string }[] = [
-  { pitchClass: 0, natural: 0, accidental: "" },
-  { pitchClass: 1, natural: 0, accidental: "♯" },
-  { pitchClass: 1, natural: 2, accidental: "♭" },
-  { pitchClass: 2, natural: 2, accidental: "" },
-  { pitchClass: 3, natural: 2, accidental: "♯" },
-  { pitchClass: 3, natural: 4, accidental: "♭" },
-  { pitchClass: 4, natural: 4, accidental: "" },
-  { pitchClass: 5, natural: 5, accidental: "" },
-  { pitchClass: 6, natural: 5, accidental: "♯" },
-  { pitchClass: 6, natural: 7, accidental: "♭" },
-  { pitchClass: 7, natural: 7, accidental: "" },
-  { pitchClass: 8, natural: 7, accidental: "♯" },
-  { pitchClass: 8, natural: 9, accidental: "♭" },
-  { pitchClass: 9, natural: 9, accidental: "" },
-  { pitchClass: 10, natural: 9, accidental: "♯" },
-  { pitchClass: 10, natural: 11, accidental: "♭" },
-  { pitchClass: 11, natural: 11, accidental: "" },
-  { pitchClass: 11, natural: 0, accidental: "♭" },
+const rootSpellings: NoteSpelling[] = [
+  { natural: 0, alteration: 0 }, // Do
+  { natural: 0, alteration: 1 }, // Do♯
+  { natural: 2, alteration: -1 }, // Ré♭
+  { natural: 2, alteration: 0 }, // Ré
+  { natural: 2, alteration: 1 }, // Ré♯
+  { natural: 4, alteration: -1 }, // Mi♭
+  { natural: 4, alteration: 0 }, // Mi
+  { natural: 5, alteration: 0 }, // Fa
+  { natural: 5, alteration: 1 }, // Fa♯
+  { natural: 7, alteration: -1 }, // Sol♭
+  { natural: 7, alteration: 0 }, // Sol
+  { natural: 7, alteration: 1 }, // Sol♯
+  { natural: 9, alteration: -1 }, // La♭
+  { natural: 9, alteration: 0 }, // La
+  { natural: 9, alteration: 1 }, // La♯
+  { natural: 11, alteration: -1 }, // Si♭
+  { natural: 11, alteration: 0 }, // Si
+  { natural: 0, alteration: -1 }, // Do♭
 ];
+
+export const SCALE_ROOTS: { pitchClass: number; spelling: NoteSpelling }[] = rootSpellings.map(
+  (spelling) => ({ pitchClass: pitchClassFromMidi(spelling.natural + spelling.alteration), spelling }),
+);
 
 export interface ScaleSelectorState {
   rootIndex: number;
@@ -54,7 +59,7 @@ export const DEFAULT_SCALE_STATE: ScaleSelectorState = {
 export function scaleConfigFromState(state: ScaleSelectorState): ScaleConfig {
   return {
     root: SCALE_ROOTS[state.rootIndex].pitchClass,
-    rootNatural: SCALE_ROOTS[state.rootIndex].natural,
+    rootNatural: SCALE_ROOTS[state.rootIndex].spelling.natural,
     quality: state.quality,
     size: state.size,
     variant: state.variant,
@@ -91,16 +96,15 @@ export function relativeScaleState(state: ScaleSelectorState): ScaleSelectorStat
     return state;
   }
 
-  const accidentalPreference = current.accidental === "♯"
-    ? ["♯", "", "♭"]
-    : current.accidental === "♭"
-      ? ["♭", "", "♯"]
-      : ["", "♯", "♭"];
+  const currentAlteration = current.spelling.alteration;
+  const alterationPreference = currentAlteration === 0
+    ? [0, 1, -1]
+    : [currentAlteration, 0, -currentAlteration];
   const candidates = SCALE_ROOTS
-    .map((root, index) => ({ accidental: root.accidental, pitchClass: root.pitchClass, index }))
+    .map((root, index) => ({ ...root, index }))
     .filter((candidate) => candidate.pitchClass === relative.root);
-  const match = accidentalPreference
-    .map((accidental) => candidates.find((candidate) => candidate.accidental === accidental))
+  const match = alterationPreference
+    .map((alteration) => candidates.find((candidate) => candidate.spelling.alteration === alteration))
     .find((candidate) => candidate !== undefined);
 
   return {

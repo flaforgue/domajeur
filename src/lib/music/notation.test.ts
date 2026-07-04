@@ -5,6 +5,7 @@ import {
   noteFromFrequency,
   pitchClassFromMidi,
   pitchClassName,
+  spellingName,
 } from "./notation";
 
 describe("notation.ts", () => {
@@ -99,6 +100,15 @@ describe("notation.ts", () => {
     it("stays non-negative for low MIDI values", () => {
       expect(pitchClassFromMidi(0)).toBe(0);
       expect(pitchClassFromMidi(1)).toBe(1);
+    });
+  });
+
+  describe("spellingName", () => {
+    it("formats a spelling in the given notation", () => {
+      expect(spellingName({ natural: 7, alteration: -1 }, "french")).toBe("Sol♭");
+      expect(spellingName({ natural: 7, alteration: -1 }, "international")).toBe("G♭");
+      expect(spellingName({ natural: 0, alteration: 0 }, "french")).toBe("Do");
+      expect(spellingName({ natural: 5, alteration: 2 }, "french")).toBe("Fa𝄪");
     });
   });
 

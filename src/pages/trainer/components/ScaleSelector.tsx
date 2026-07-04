@@ -1,5 +1,5 @@
 import { InfoIcon, MoveDiagonal2Icon } from "lucide-react";
-import { pitchClassName } from "../../../lib/music/notation";
+import { spellingName } from "../../../lib/music/notation";
 import {
   maxPlayableOctaves,
   relativeScale,
@@ -63,7 +63,7 @@ export function ScaleSelector({ state, onChange }: Props) {
           value={String(state.rootIndex)}
           options={SCALE_ROOTS.map((root, index) => ({
             value: String(index),
-            label: pitchClassName(root.natural, notation) + root.accidental,
+            label: spellingName(root.spelling, notation),
           }))}
           onChange={(value) => {
             onChange(clampScaleState({ ...state, rootIndex: Number(value) }));

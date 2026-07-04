@@ -1,4 +1,10 @@
-import { type Notation, type NoteSpelling, pitchClassFromMidi, pitchClassName } from "./notation";
+import {
+  NATURAL_PITCH_CLASSES,
+  pitchClassFromMidi,
+  pitchClassName,
+  type Notation,
+  type NoteSpelling,
+} from "./notation";
 
 export const STRINGS: { midi: number; suffix: string }[] = [
   { midi: 40, suffix: " grave" }, // E2
@@ -11,7 +17,6 @@ export const STRINGS: { midi: number; suffix: string }[] = [
 
 export const LOWEST_PLAYABLE_MIDI = STRINGS[0].midi;
 
-const naturalPitchClasses = new Set([0, 2, 4, 5, 7, 9, 11]);
 const maxFretForCanonicalPosition = 12;
 
 export const HIGHEST_CANONICAL_MIDI = STRINGS[STRINGS.length - 1].midi + maxFretForCanonicalPosition;
@@ -76,7 +81,7 @@ export function randomNote(
   STRINGS.forEach((string, stringIndex) => {
     for (let fretIndex = 0; fretIndex <= maxFret; fretIndex++) {
       const midi = string.midi + fretIndex;
-      if (isNaturalsOnly && !naturalPitchClasses.has(pitchClassFromMidi(midi))) {
+      if (isNaturalsOnly && !NATURAL_PITCH_CLASSES.includes(pitchClassFromMidi(midi))) {
         continue;
       }
 
