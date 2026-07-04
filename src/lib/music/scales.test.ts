@@ -79,7 +79,7 @@ describe("scales.ts", () => {
           size: "heptatonic",
           variant: "standard",
         },
-        midis: [48, 50, 52, 53, 55, 57, 59],
+        midis: [48, 50, 52, 53, 55, 57, 59, 60],
       },
       {
         name: "major pentatonic",
@@ -88,7 +88,7 @@ describe("scales.ts", () => {
           size: "pentatonic",
           variant: "standard",
         },
-        midis: [48, 50, 52, 55, 57],
+        midis: [48, 50, 52, 55, 57, 60],
       },
       {
         name: "major pentatonic blues",
@@ -97,7 +97,7 @@ describe("scales.ts", () => {
           size: "pentatonic",
           variant: "blues",
         },
-        midis: [48, 50, 51, 52, 55, 57],
+        midis: [48, 50, 51, 52, 55, 57, 60],
       },
       {
         name: "minor heptatonic",
@@ -106,7 +106,7 @@ describe("scales.ts", () => {
           size: "heptatonic",
           variant: "standard",
         },
-        midis: [48, 50, 51, 53, 55, 56, 58],
+        midis: [48, 50, 51, 53, 55, 56, 58, 60],
       },
       {
         name: "minor pentatonic",
@@ -115,7 +115,7 @@ describe("scales.ts", () => {
           size: "pentatonic",
           variant: "standard",
         },
-        midis: [48, 51, 53, 55, 58],
+        midis: [48, 51, 53, 55, 58, 60],
       },
       {
         name: "minor pentatonic blues",
@@ -124,7 +124,7 @@ describe("scales.ts", () => {
           size: "pentatonic",
           variant: "blues",
         },
-        midis: [48, 51, 53, 54, 55, 58],
+        midis: [48, 51, 53, 54, 55, 58, 60],
       },
     ];
 
@@ -134,7 +134,7 @@ describe("scales.ts", () => {
 
     it("builds A minor pentatonic from the first playable A (MIDI 45)", () => {
       const midis = scaleNotesFromConfig(config({ root: 9, quality: "minor", size: "pentatonic" })).map((n) => n.midi);
-      expect(midis).toEqual([45, 48, 50, 52, 55]);
+      expect(midis).toEqual([45, 48, 50, 52, 55, 57]);
     });
 
     it("returns notes that are not pre-validated and have a playable position", () => {
@@ -145,13 +145,14 @@ describe("scales.ts", () => {
     });
 
     it("defaults to a single octave", () => {
-      expect(scaleNotesFromConfig(config()).map((note) => note.midi)).toEqual([48, 50, 52, 53, 55, 57, 59]);
+      expect(scaleNotesFromConfig(config()).map((note) => note.midi)).toEqual([48, 50, 52, 53, 55, 57, 59, 60]);
     });
 
-    it("repeats the intervals shifted by an octave for each additional octave", () => {
+    it("repeats the intervals shifted by an octave and closes on the tonic", () => {
       expect(scaleNotesFromConfig(config({ root: 4 }), 2).map((note) => note.midi)).toEqual([
         40, 42, 44, 45, 47, 49, 51,
         52, 54, 56, 57, 59, 61, 63,
+        64,
       ]);
     });
   });
@@ -164,31 +165,31 @@ describe("scales.ts", () => {
 
     it("spells C harmonic minor with flats, never reusing a letter", () => {
       expect(pitchNames({ quality: "harmonicMinor" }))
-        .toEqual(["Do", "Ré", "Mi♭", "Fa", "Sol", "La♭", "Si"]);
+        .toEqual(["Do", "Ré", "Mi♭", "Fa", "Sol", "La♭", "Si", "Do"]);
     });
 
     it("spells the natural minor scale with flats", () => {
       expect(pitchNames({ quality: "minor" }))
-        .toEqual(["Do", "Ré", "Mi♭", "Fa", "Sol", "La♭", "Si♭"]);
+        .toEqual(["Do", "Ré", "Mi♭", "Fa", "Sol", "La♭", "Si♭", "Do"]);
     });
 
     it("follows the root's own spelling for enharmonic roots", () => {
       expect(pitchNames({ root: 1, rootNatural: 2 }))
-        .toEqual(["Ré♭", "Mi♭", "Fa", "Sol♭", "La♭", "Si♭", "Do"]);
+        .toEqual(["Ré♭", "Mi♭", "Fa", "Sol♭", "La♭", "Si♭", "Do", "Ré♭"]);
       expect(pitchNames({ root: 1, rootNatural: 0 }))
-        .toEqual(["Do♯", "Ré♯", "Mi♯", "Fa♯", "Sol♯", "La♯", "Si♯"]);
+        .toEqual(["Do♯", "Ré♯", "Mi♯", "Fa♯", "Sol♯", "La♯", "Si♯", "Do♯"]);
     });
 
     it("uses a double sharp where the key demands it", () => {
       expect(pitchNames({ root: 8, rootNatural: 7, quality: "harmonicMinor" }))
-        .toEqual(["Sol♯", "La♯", "Si", "Do♯", "Ré♯", "Mi", "Fa𝄪"]);
+        .toEqual(["Sol♯", "La♯", "Si", "Do♯", "Ré♯", "Mi", "Fa𝄪", "Sol♯"]);
     });
 
     it("spells the blue note as the flattened degree above", () => {
       expect(pitchNames({ root: 9, quality: "minor", size: "pentatonic", variant: "blues" }))
-        .toEqual(["La", "Do", "Ré", "Mi♭", "Mi", "Sol"]);
+        .toEqual(["La", "Do", "Ré", "Mi♭", "Mi", "Sol", "La"]);
       expect(pitchNames({ size: "pentatonic", variant: "blues" }))
-        .toEqual(["Do", "Ré", "Mi♭", "Mi", "Sol", "La"]);
+        .toEqual(["Do", "Ré", "Mi♭", "Mi", "Sol", "La", "Do"]);
     });
 
     it("uses each of the seven letters exactly once for every root and quality", () => {

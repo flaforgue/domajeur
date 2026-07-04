@@ -81,20 +81,22 @@ describe("relativeScaleState", () => {
 
 describe("scaleSeriesFromState", () => {
   it.each([
-    ["heptatonic", "standard", 7],
-    ["pentatonic", "standard", 5],
-    ["pentatonic", "blues", 6],
-  ] as const)("produces the notes of a one-octave %s %s scale", (size, variant, expectedCount) => {
+    ["heptatonic", "standard", 8],
+    ["pentatonic", "standard", 6],
+    ["pentatonic", "blues", 7],
+  ] as const)("produces the notes of a one-octave %s %s scale, closing tonic included", (size, variant, expectedCount) => {
     const series = scaleSeriesFromState(makeState({ size, variant }));
 
     expect(series).toHaveLength(expectedCount);
+    expect(series[series.length - 1].midi).toBe(series[0].midi + 12);
   });
 
   it("stacks the second octave one octave above the first", () => {
     const series = scaleSeriesFromState(makeState({ octaves: 2 }));
 
-    expect(series).toHaveLength(14);
+    expect(series).toHaveLength(15);
     expect(series[7].midi).toBe(series[0].midi + 12);
+    expect(series[14].midi).toBe(series[0].midi + 24);
   });
 
   it("spells the series according to the chosen root spelling", () => {

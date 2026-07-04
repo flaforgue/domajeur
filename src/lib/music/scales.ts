@@ -130,30 +130,32 @@ export function scaleNotesFromConfig(config: ScaleConfig, octaves = 1): NoteCand
   const intervals = scaleIntervals(config);
   const spellings = scaleSpellings(config);
 
-  return Array.from({ length: octaves }, (_, octave) => octave).flatMap((octave) =>
-    intervals.map((interval) => {
-      const midi = rootMidi + interval + 12 * octave;
-      const position = canonicalStringPositionFromMidi(midi);
-
-      return {
-        stringIndex: position.stringIndex,
-        fretIndex: position.fretIndex,
-        midi,
-        spelling: spellings.get(pitchClassFromMidi(midi)),
-        isValidated: false,
-      };
-    }),
+  const midis = Array.from({ length: octaves }, (_, octave) => octave).flatMap((octave) =>
+    intervals.map((interval) => rootMidi + interval + 12 * octave),
   );
+  // Scales are practiced up to the closing tonic (do, ré, … si, do).
+  midis.push(rootMidi + 12 * octaves);
+
+  return midis.map((midi) => {
+    const position = canonicalStringPositionFromMidi(midi);
+
+    return {
+      stringIndex: position.stringIndex,
+      fretIndex: position.fretIndex,
+      midi,
+      spelling: spellings.get(pitchClassFromMidi(midi)),
+      isValidated: false,
+    };
+  });
 }
 
 export function maxPlayableOctaves(config: ScaleConfig): number {
   const rootMidi = rootMidiFor(config.root);
-  const intervals = scaleIntervals(config);
-  const topInterval = intervals[intervals.length - 1];
 
   let max = 1;
   for (let octaves = 2; octaves <= maxScaleOctaves; octaves++) {
-    if (rootMidi + topInterval + 12 * (octaves - 1) <= HIGHEST_CANONICAL_MIDI) {
+    // The closing tonic, one octave above the last cycle, is the highest note of the series.
+    if (rootMidi + 12 * octaves <= HIGHEST_CANONICAL_MIDI) {
       max = octaves;
     }
   }
