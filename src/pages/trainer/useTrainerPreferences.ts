@@ -32,6 +32,7 @@ function parseScale(value: unknown): ScaleSelectorState {
     size: scale.size === "pentatonic" ? "pentatonic" : "heptatonic",
     variant: scale.variant === "blues" ? "blues" : "standard",
     octaves: typeof scale.octaves === "number" ? scale.octaves : DEFAULT_SCALE_STATE.octaves,
+    isRoundTrip: scale.isRoundTrip === true,
   });
 }
 

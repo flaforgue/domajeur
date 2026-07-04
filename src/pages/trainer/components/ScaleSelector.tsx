@@ -21,6 +21,7 @@ import {
 import { useNotation } from "../../../hooks/useNotation";
 import { Flex } from "../../../components/layout/Flex";
 import { Select } from "../../../components/inputs/Select";
+import { ToggleSwitch } from "../../../components/inputs/ToggleSwitch";
 import { HELP_TOOLTIP_ID } from "../../../components/HelpTooltip";
 
 const qualityOptions: { value: ScaleQuality; label: string }[] = SCALE_QUALITIES.map((quality) => ({
@@ -132,6 +133,15 @@ export function ScaleSelector({ state, onChange }: Props) {
           onChange({ ...state, octaves: Number(value) });
         }}
       />
+
+      <ToggleSwitch
+        isChecked={state.isRoundTrip}
+        onChange={(isChecked) => {
+          onChange({ ...state, isRoundTrip: isChecked });
+        }}
+      >
+        Aller-retour (montée puis descente)
+      </ToggleSwitch>
     </>
   );
 }

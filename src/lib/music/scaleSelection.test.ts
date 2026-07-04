@@ -99,6 +99,22 @@ describe("scaleSeriesFromState", () => {
     expect(series[14].midi).toBe(series[0].midi + 24);
   });
 
+  it("mirrors the ascent back down to the root when round trip is enabled", () => {
+    const series = scaleSeriesFromState(makeState({ isRoundTrip: true }));
+
+    expect(series.map((note) => note.midi)).toEqual([
+      48, 50, 52, 53, 55, 57, 59, 60,
+      59, 57, 55, 53, 52, 50, 48,
+    ]);
+  });
+
+  it("keeps ascending and descending entries independent for validation", () => {
+    const series = scaleSeriesFromState(makeState({ isRoundTrip: true }));
+
+    expect(series[0]).not.toBe(series[series.length - 1]);
+    expect(series[0]).toEqual(series[series.length - 1]);
+  });
+
   it("spells the series according to the chosen root spelling", () => {
     const sharpSeries = scaleSeriesFromState(makeState({ rootIndex: doSharpIndex }));
     const flatSeries = scaleSeriesFromState(makeState({ rootIndex: reFlatIndex }));
