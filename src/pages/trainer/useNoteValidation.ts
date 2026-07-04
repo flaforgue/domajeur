@@ -1,8 +1,8 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useState } from "react";
 import type { NoteCandidate } from "../../lib/music/guitar";
 import { useEngineFrame } from "../../hooks/useEngineFrame";
 import { useLatest } from "../../hooks/useLatest";
-import { createNoteValidator, type NoteValidator } from "./noteValidator";
+import { createValidationSession } from "./noteValidator";
 
 interface Options {
   target: NoteCandidate | null;
@@ -11,21 +11,20 @@ interface Options {
 }
 
 export function useNoteValidation({ target, isActive, onValidated }: Options): void {
-  const validatorRef = useRef<NoteValidator | null>(null);
+  const [session] = useState(createValidationSession);
   const isActiveRef = useLatest(isActive);
   const onValidatedRef = useLatest(onValidated);
 
   useEffect(() => {
-    validatorRef.current = target === null ? null : createNoteValidator(target.midi);
-  }, [target]);
+    session.setTarget(target);
+  }, [session, target]);
 
   useEngineFrame((frame) => {
-    const validator = validatorRef.current;
-    if (!isActiveRef.current || validator === null) {
+    if (!isActiveRef.current) {
       return;
     }
 
-    if (validator.processFrame(frame, performance.now())) {
+    if (session.processFrame(frame, performance.now())) {
       onValidatedRef.current();
     }
   });

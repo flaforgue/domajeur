@@ -3,7 +3,7 @@ import { useMuted } from "../../hooks/useMuted";
 import { useMetronome } from "../../hooks/useMetronome";
 import { useSpacebar } from "../../hooks/useSpacebar";
 import { useWakeLock } from "../../hooks/useWakeLock";
-import { useMetronomeSettings } from "./useMetronomeSettings";
+import { MAX_BEATS, MAX_BPM, MIN_BEATS, MIN_BPM, useMetronomeSettings } from "./useMetronomeSettings";
 import { cn } from "../../lib/cn";
 import { clamp } from "../../lib/math";
 import { Button } from "../../components/buttons/Button";
@@ -12,11 +12,6 @@ import { PageContainer } from "../../components/layout/PageContainer";
 import { Flex } from "../../components/layout/Flex";
 import { SectionTitle } from "../../components/SectionTitle";
 import { EnableSoundPrompt } from "../../components/EnableSoundPrompt";
-
-const minBpm = 40;
-const maxBpm = 240;
-const minBeats = 1;
-const maxBeats = 12;
 
 export function Metronome() {
   const [isMuted] = useMuted();
@@ -30,11 +25,11 @@ export function Metronome() {
   useWakeLock(isRunning);
 
   function changeBpm(value: number): void {
-    setSettings({ bpm: clamp(value, minBpm, maxBpm), beatsPerMeasure });
+    setSettings({ bpm: clamp(value, MIN_BPM, MAX_BPM), beatsPerMeasure });
   }
 
   function changeBeatsPerMeasure(value: number): void {
-    setSettings({ bpm, beatsPerMeasure: clamp(value, minBeats, maxBeats) });
+    setSettings({ bpm, beatsPerMeasure: clamp(value, MIN_BEATS, MAX_BEATS) });
   }
 
   useSpacebar(() => {
@@ -137,7 +132,7 @@ export function Metronome() {
           <Button
             variant="icon"
             aria-label="Ralentir de 5"
-            disabled={bpm <= minBpm}
+            disabled={bpm <= MIN_BPM}
             onClick={() => {
               changeBpm(bpm - 5);
             }}
@@ -148,7 +143,7 @@ export function Metronome() {
           <Button
             variant="icon"
             aria-label="Ralentir"
-            disabled={bpm <= minBpm}
+            disabled={bpm <= MIN_BPM}
             onClick={() => {
               changeBpm(bpm - 1);
             }}
@@ -161,8 +156,8 @@ export function Metronome() {
               flex-1
               accent-brass
             `}
-            min={minBpm}
-            max={maxBpm}
+            min={MIN_BPM}
+            max={MAX_BPM}
             value={bpm}
             onChange={(event) => {
               changeBpm(Number(event.target.value));
@@ -171,7 +166,7 @@ export function Metronome() {
           <Button
             variant="icon"
             aria-label="Accélérer"
-            disabled={bpm >= maxBpm}
+            disabled={bpm >= MAX_BPM}
             onClick={() => {
               changeBpm(bpm + 1);
             }}
@@ -181,7 +176,7 @@ export function Metronome() {
           <Button
             variant="icon"
             aria-label="Accélérer de 5"
-            disabled={bpm >= maxBpm}
+            disabled={bpm >= MAX_BPM}
             onClick={() => {
               changeBpm(bpm + 5);
             }}
@@ -200,7 +195,7 @@ export function Metronome() {
           <Button
             variant="icon"
             aria-label="Moins de temps"
-            disabled={beatsPerMeasure <= minBeats}
+            disabled={beatsPerMeasure <= MIN_BEATS}
             onClick={() => {
               changeBeatsPerMeasure(beatsPerMeasure - 1);
             }}
@@ -221,7 +216,7 @@ export function Metronome() {
           <Button
             variant="icon"
             aria-label="Plus de temps"
-            disabled={beatsPerMeasure >= maxBeats}
+            disabled={beatsPerMeasure >= MAX_BEATS}
             onClick={() => {
               changeBeatsPerMeasure(beatsPerMeasure + 1);
             }}

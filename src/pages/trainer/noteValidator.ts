@@ -1,5 +1,6 @@
 import { detectedNoteFromFrame } from "../../lib/pitch/detectedNote";
 import type { Frame } from "../../lib/pitch/pitchEngine";
+import type { NoteCandidate } from "../../lib/music/guitar";
 
 const stableHoldMs = 130;
 const minClarityToValidate = 0.85;
@@ -42,6 +43,30 @@ export function createNoteValidator(targetMidi: number): NoteValidator {
       }
 
       return false;
+    },
+  };
+}
+
+export interface ValidationSession {
+  setTarget: (target: NoteCandidate | null) => void;
+  processFrame: (frame: Frame, now: number) => boolean;
+}
+
+export function createValidationSession(): ValidationSession {
+  let target: NoteCandidate | null = null;
+  let validator: NoteValidator | null = null;
+
+  return {
+    setTarget(next: NoteCandidate | null): void {
+      if (next === target) {
+        return;
+      }
+
+      target = next;
+      validator = next === null ? null : createNoteValidator(next.midi);
+    },
+    processFrame(frame: Frame, now: number): boolean {
+      return validator?.processFrame(frame, now) ?? false;
     },
   };
 }

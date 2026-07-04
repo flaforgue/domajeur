@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { frequencyFromMidi } from "../../lib/music/notation";
 import type { Frame } from "../../lib/pitch/pitchEngine";
-import { createNoteValidator, type NoteValidator } from "./noteValidator";
+import type { NoteCandidate } from "../../lib/music/guitar";
+import { createNoteValidator, createValidationSession, type NoteValidator } from "./noteValidator";
 
 const targetMidi = 45;
 const otherMidi = 47;
@@ -86,5 +87,50 @@ describe("createNoteValidator", () => {
 
     expect(validator.processFrame(noteFrame(targetMidi), holdMs)).toBe(true);
     expect(validator.processFrame(noteFrame(targetMidi), holdMs * 2)).toBe(false);
+  });
+});
+
+describe("createValidationSession", () => {
+  function candidate(midi: number): NoteCandidate {
+    return { stringIndex: 0, fretIndex: 0, midi, isValidated: false };
+  }
+
+  it("validates nothing before a target is set", () => {
+    const session = createValidationSession();
+
+    expect(session.processFrame(noteFrame(targetMidi), holdMs)).toBe(false);
+  });
+
+  it("validates the current target after the hold", () => {
+    const session = createValidationSession();
+    session.setTarget(candidate(targetMidi));
+
+    expect(session.processFrame(noteFrame(targetMidi), 0)).toBe(false);
+    expect(session.processFrame(noteFrame(targetMidi), holdMs)).toBe(true);
+  });
+
+  it("re-arms for a new series entry sharing the same pitch (round-trip seam)", () => {
+    const session = createValidationSession();
+    session.setTarget(candidate(targetMidi));
+    session.processFrame(noteFrame(targetMidi), 0);
+    expect(session.processFrame(noteFrame(targetMidi), holdMs)).toBe(true);
+
+    session.setTarget(candidate(targetMidi));
+    session.processFrame(noteFrame(targetMidi), 500);
+
+    expect(session.processFrame(noteFrame(targetMidi), 500 + holdMs)).toBe(true);
+  });
+
+  it("does not re-arm while the same entry stays the target", () => {
+    const session = createValidationSession();
+    const entry = candidate(targetMidi);
+    session.setTarget(entry);
+    session.processFrame(noteFrame(targetMidi), 0);
+    expect(session.processFrame(noteFrame(targetMidi), holdMs)).toBe(true);
+
+    session.setTarget(entry);
+    session.processFrame(noteFrame(targetMidi), 500);
+
+    expect(session.processFrame(noteFrame(targetMidi), 500 + holdMs)).toBe(false);
   });
 });
