@@ -25,7 +25,7 @@ export function useNoteValidation({ target, isActive, onValidated }: Options): v
       return;
     }
 
-    if (validator.processFrame(frame)) {
+    if (validator.processFrame(frame, performance.now())) {
       onValidatedRef.current();
     }
   });

@@ -1,20 +1,20 @@
 import { detectedNoteFromFrame } from "../../lib/pitch/detectedNote";
 import type { Frame } from "../../lib/pitch/pitchEngine";
 
-const minStableFrames = 8;
+const stableHoldMs = 130;
 const minClarityToValidate = 0.85;
 
 export interface NoteValidator {
-  processFrame: (frame: Frame) => boolean;
+  processFrame: (frame: Frame, now: number) => boolean;
 }
 
 export function createNoteValidator(targetMidi: number): NoteValidator {
   let stableMidi: number | null = null;
-  let stableCount = 0;
+  let stableSince = 0;
   let hasValidated = false;
 
   return {
-    processFrame(frame: Frame): boolean {
+    processFrame(frame: Frame, now: number): boolean {
       if (frame.isRefPlaying || hasValidated) {
         return false;
       }
@@ -22,22 +22,19 @@ export function createNoteValidator(targetMidi: number): NoteValidator {
       const detected = detectedNoteFromFrame(frame);
       if (detected === null) {
         stableMidi = null;
-        stableCount = 0;
 
         return false;
       }
 
-      if (detected.midi === stableMidi) {
-        stableCount++;
-      } else {
+      if (detected.midi !== stableMidi) {
         stableMidi = detected.midi;
-        stableCount = 1;
+        stableSince = now;
       }
 
       if (
         detected.midi === targetMidi
         && frame.clarity >= minClarityToValidate
-        && stableCount >= minStableFrames
+        && now - stableSince >= stableHoldMs
       ) {
         hasValidated = true;
 
