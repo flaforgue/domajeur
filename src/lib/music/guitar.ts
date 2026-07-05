@@ -15,11 +15,9 @@ export const STRINGS: { midi: number; suffix: string }[] = [
   { midi: 64, suffix: " aigu" }, // E4
 ];
 
-export const LOWEST_PLAYABLE_MIDI = STRINGS[0].midi;
+const lowestPlayableMidi = STRINGS[0].midi;
 
 const maxFretForCanonicalPosition = 12;
-
-export const HIGHEST_CANONICAL_MIDI = STRINGS[STRINGS.length - 1].midi + maxFretForCanonicalPosition;
 
 export interface StringPosition { stringIndex: number; fretIndex: number }
 export interface ScaleMarker extends StringPosition { isRoot: boolean }
@@ -69,7 +67,7 @@ export function canonicalStringPositionFromMidi(midi: number): StringPosition {
     }
   }
 
-  return bestMatch ?? { stringIndex: 0, fretIndex: Math.max(0, midi - LOWEST_PLAYABLE_MIDI) };
+  return bestMatch ?? { stringIndex: 0, fretIndex: Math.max(0, midi - lowestPlayableMidi) };
 }
 
 export function randomNote(

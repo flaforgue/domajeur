@@ -1,12 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { namedNoteFromMidi } from "./notation";
+import { namedNoteFromMidi, spellingFromPitchName } from "./notation";
+import { STRINGS } from "./guitar";
+import { SCALE_NOTES, SCALE_ROOT_NAMES } from "./scaleData";
 import {
   isScaleQuality,
   maxPlayableOctaves,
   relativeScale,
-  scaleIntervals,
   scaleNotesFromConfig,
-  scaleSpellings,
   SCALE_QUALITIES,
   type ScaleConfig,
 } from "./scales";
@@ -20,53 +20,61 @@ const config = (overrides: Partial<ScaleConfig> = {}): ScaleConfig => ({
 });
 
 describe("scales.ts", () => {
-  describe("scaleIntervals", () => {
-    it("returns the major scale", () => {
-      expect(scaleIntervals(config())).toEqual([0, 2, 4, 5, 7, 9, 11]);
+  describe("SCALE_NOTES", () => {
+    const scales = SCALE_QUALITIES.flatMap((quality) =>
+      SCALE_ROOT_NAMES.map((rootName) => ({
+        title: `${rootName} ${quality}`,
+        notes: SCALE_NOTES[quality][rootName],
+      })),
+    );
+
+    it("keeps name, octave and midi consistent for every note", () => {
+      for (const { notes } of scales) {
+        for (const note of notes) {
+          const spelling = spellingFromPitchName(note.name);
+          expect(12 * (note.octave + 1) + spelling.naturalPitchClass + spelling.alteration).toBe(note.midi);
+        }
+      }
     });
 
-    it("returns the natural minor scale", () => {
-      expect(scaleIntervals(config({ quality: "minor" }))).toEqual([0, 2, 3, 5, 7, 8, 10]);
+    it("keeps every position playable and matching its midi", () => {
+      for (const { notes } of scales) {
+        for (const note of notes) {
+          expect(note.fretIndex).toBeGreaterThanOrEqual(0);
+          expect(note.fretIndex).toBeLessThanOrEqual(12);
+          expect(STRINGS[note.stringIndex].midi + note.fretIndex).toBe(note.midi);
+        }
+      }
     });
 
-    it("drops the two semitone notes for the major pentatonic", () => {
-      expect(scaleIntervals(config({ size: "pentatonic" }))).toEqual([0, 2, 4, 7, 9]);
+    it("lists every scale in ascending order, from the tonic to a closing tonic", () => {
+      for (const { title, notes } of scales) {
+        for (let i = 1; i < notes.length; i++) {
+          expect(notes[i].midi, title).toBeGreaterThan(notes[i - 1].midi);
+        }
+        expect(notes[notes.length - 1].name, title).toBe(notes[0].name);
+        expect((notes[notes.length - 1].midi - notes[0].midi) % 12, title).toBe(0);
+      }
     });
 
-    it("drops the two semitone notes for the minor pentatonic", () => {
-      expect(scaleIntervals(config({ quality: "minor", size: "pentatonic" }))).toEqual([0, 3, 5, 7, 10]);
+    it("uses each of the seven letters exactly once for every root and quality", () => {
+      for (const { title, notes } of scales) {
+        const octave = notes.filter((note) => note.isBlue !== true && note.midi < notes[0].midi + 12);
+        const letters = new Set(octave.map((note) => spellingFromPitchName(note.name).naturalPitchClass));
+        expect(letters.size, title).toBe(7);
+      }
     });
 
-    it("adds the ♭5 blue note to the minor pentatonic", () => {
-      expect(scaleIntervals(config({ quality: "minor", size: "pentatonic", variant: "blues" })))
-        .toEqual([0, 3, 5, 6, 7, 10]);
-    });
-
-    it("adds the ♭3 blue note to the major pentatonic", () => {
-      expect(scaleIntervals(config({ size: "pentatonic", variant: "blues" }))).toEqual([0, 2, 3, 4, 7, 9]);
-    });
-
-    it("ignores blues on the heptatonic scale since the blue note is a pentatonic device", () => {
-      expect(scaleIntervals(config({ variant: "blues" }))).toEqual([0, 2, 4, 5, 7, 9, 11]);
-      expect(scaleIntervals(config({ quality: "minor", variant: "blues" }))).toEqual([0, 2, 3, 5, 7, 8, 10]);
-    });
-
-    it("returns the harmonic minor scale with its raised 7th", () => {
-      expect(scaleIntervals(config({ quality: "harmonicMinor" }))).toEqual([0, 2, 3, 5, 7, 8, 11]);
-    });
-
-    it("ignores pentatonic and blues for harmonic minor since it supports neither", () => {
-      expect(scaleIntervals(config({ quality: "harmonicMinor", size: "pentatonic", variant: "blues" })))
-        .toEqual([0, 2, 3, 5, 7, 8, 11]);
-    });
-
-    it("returns the phrygian dominant scale", () => {
-      expect(scaleIntervals(config({ quality: "phrygianDominant" }))).toEqual([0, 1, 4, 5, 7, 8, 10]);
-    });
-
-    it("ignores pentatonic and blues for phrygian dominant since it supports neither", () => {
-      expect(scaleIntervals(config({ quality: "phrygianDominant", size: "pentatonic", variant: "blues" })))
-        .toEqual([0, 1, 4, 5, 7, 8, 10]);
+    it("spells the blue note as the flattened degree above", () => {
+      for (const { title, notes } of scales) {
+        for (const note of notes.filter((candidate) => candidate.isBlue === true)) {
+          const degreeAbove = notes.find((candidate) => candidate.midi === note.midi + 1);
+          const blueSpelling = spellingFromPitchName(note.name);
+          const aboveSpelling = spellingFromPitchName(degreeAbove?.name ?? "");
+          expect(blueSpelling.naturalPitchClass, title).toBe(aboveSpelling.naturalPitchClass);
+          expect(blueSpelling.alteration, title).toBe(aboveSpelling.alteration - 1);
+        }
+      }
     });
   });
 
@@ -126,10 +134,45 @@ describe("scales.ts", () => {
         },
         midis: [48, 51, 53, 54, 55, 58, 60],
       },
+      {
+        name: "harmonic minor heptatonic",
+        overrides: {
+          quality: "harmonicMinor",
+          size: "heptatonic",
+          variant: "standard",
+        },
+        midis: [48, 50, 51, 53, 55, 56, 59, 60],
+      },
+      {
+        name: "harmonic major heptatonic",
+        overrides: {
+          quality: "harmonicMajor",
+          size: "heptatonic",
+          variant: "standard",
+        },
+        midis: [48, 50, 52, 53, 55, 56, 59, 60],
+      },
     ];
 
     it.each(cases)("builds C $name", ({ overrides, midis }) => {
       expect(scaleNotesFromConfig(config(overrides)).map((note) => note.midi)).toEqual(midis);
+    });
+
+    it("ignores blues on the heptatonic scale since the blue note is a pentatonic device", () => {
+      expect(scaleNotesFromConfig(config({ variant: "blues" })).map((note) => note.midi))
+        .toEqual([48, 50, 52, 53, 55, 57, 59, 60]);
+      expect(scaleNotesFromConfig(config({ quality: "minor", variant: "blues" })).map((note) => note.midi))
+        .toEqual([48, 50, 51, 53, 55, 56, 58, 60]);
+    });
+
+    it("ignores pentatonic and blues for harmonic minor since it supports neither", () => {
+      const notes = scaleNotesFromConfig(config({ quality: "harmonicMinor", size: "pentatonic", variant: "blues" }));
+      expect(notes.map((note) => note.midi)).toEqual([48, 50, 51, 53, 55, 56, 59, 60]);
+    });
+
+    it("ignores pentatonic and blues for harmonic major since it supports neither", () => {
+      const notes = scaleNotesFromConfig(config({ quality: "harmonicMajor", size: "pentatonic", variant: "blues" }));
+      expect(notes.map((note) => note.midi)).toEqual([48, 50, 52, 53, 55, 56, 59, 60]);
     });
 
     it("builds A minor pentatonic from the first playable A (MIDI 45)", () => {
@@ -157,7 +200,7 @@ describe("scales.ts", () => {
     });
   });
 
-  describe("scaleSpellings", () => {
+  describe("spellings", () => {
     const pitchNames = (overrides: Partial<ScaleConfig>): string[] =>
       scaleNotesFromConfig(config(overrides)).map(
         (note) => namedNoteFromMidi(note.midi, "french", note.spelling).pitchName,
@@ -166,6 +209,11 @@ describe("scales.ts", () => {
     it("spells C harmonic minor with flats, never reusing a letter", () => {
       expect(pitchNames({ quality: "harmonicMinor" }))
         .toEqual(["Do", "Ré", "Mi♭", "Fa", "Sol", "La♭", "Si", "Do"]);
+    });
+
+    it("spells C harmonic major with its flattened 6th", () => {
+      expect(pitchNames({ quality: "harmonicMajor" }))
+        .toEqual(["Do", "Ré", "Mi", "Fa", "Sol", "La♭", "Si", "Do"]);
     });
 
     it("spells the natural minor scale with flats", () => {
@@ -190,16 +238,6 @@ describe("scales.ts", () => {
         .toEqual(["La", "Do", "Ré", "Mi♭", "Mi", "Sol", "La"]);
       expect(pitchNames({ size: "pentatonic", variant: "blues" }))
         .toEqual(["Do", "Ré", "Mi♭", "Mi", "Sol", "La", "Do"]);
-    });
-
-    it("uses each of the seven letters exactly once for every root and quality", () => {
-      for (const quality of SCALE_QUALITIES) {
-        for (let root = 0; root < 12; root++) {
-          const spellings = scaleSpellings(config({ root, quality }));
-          const letters = [...spellings.values()].map((spelling) => spelling.natural);
-          expect(new Set(letters).size).toBe(7);
-        }
-      }
     });
   });
 
@@ -228,10 +266,11 @@ describe("scales.ts", () => {
       expect(isScaleQuality("major")).toBe(true);
       expect(isScaleQuality("minor")).toBe(true);
       expect(isScaleQuality("harmonicMinor")).toBe(true);
-      expect(isScaleQuality("phrygianDominant")).toBe(true);
+      expect(isScaleQuality("harmonicMajor")).toBe(true);
     });
 
     it("rejects unknown or non-string values", () => {
+      expect(isScaleQuality("phrygianDominant")).toBe(false);
       expect(isScaleQuality("lydian")).toBe(false);
       expect(isScaleQuality(undefined)).toBe(false);
       expect(isScaleQuality(null)).toBe(false);
@@ -251,9 +290,9 @@ describe("scales.ts", () => {
       expect(relativeScale(4, "minor")).toEqual({ root: 7, quality: "major" }); // Mi mineur → Sol majeur
     });
 
-    it("has no relative for harmonic minor or phrygian dominant", () => {
+    it("has no relative for harmonic minor or harmonic major", () => {
       expect(relativeScale(0, "harmonicMinor")).toBeNull();
-      expect(relativeScale(0, "phrygianDominant")).toBeNull();
+      expect(relativeScale(0, "harmonicMajor")).toBeNull();
     });
 
     it("round-trips a major key back to itself through its relative", () => {

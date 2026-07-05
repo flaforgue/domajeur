@@ -54,7 +54,6 @@ export function Select({ label, value, options, onChange, className }: Props) {
     buttonRef.current?.focus();
   }
 
-  // Reposition the (portaled) list with the trigger, and close on outside click.
   useEffect(() => {
     if (!isOpen) {
       return undefined;

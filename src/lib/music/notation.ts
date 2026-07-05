@@ -9,8 +9,8 @@ const a4FrequencyHz = 440;
 const a4Midi = 69;
 
 export interface NoteSpelling {
-  natural: number; // pitch class of the letter (0, 2, 4, 5, 7, 9 or 11)
-  alteration: number; // semitones added by the accidental, from -2 (𝄫) to 2 (𝄪)
+  naturalPitchClass: number;
+  alteration: number;
 }
 
 const accidentalGlyphs = ["𝄫", "♭", "", "♯", "𝄪"];
@@ -19,12 +19,26 @@ export const NATURAL_PITCH_CLASSES = [0, 2, 4, 5, 7, 9, 11];
 
 function defaultSpelling(pitchClass: number): NoteSpelling {
   return NATURAL_PITCH_CLASSES.includes(pitchClass)
-    ? { natural: pitchClass, alteration: 0 }
-    : { natural: pitchClass - 1, alteration: 1 };
+    ? { naturalPitchClass: pitchClass, alteration: 0 }
+    : { naturalPitchClass: pitchClass - 1, alteration: 1 };
 }
 
 export function spellingName(spelling: NoteSpelling, notation: Notation): string {
-  return pitchClassName(spelling.natural, notation) + accidentalGlyphs[spelling.alteration + 2];
+  return pitchClassName(spelling.naturalPitchClass, notation) + accidentalGlyphs[spelling.alteration + 2];
+}
+
+export function spellingFromPitchName(pitchName: string): NoteSpelling {
+  const natural = NATURAL_PITCH_CLASSES.find(
+    (pitchClass) => pitchName.startsWith(names.french[pitchClass]),
+  );
+  if (natural === undefined) {
+    throw new Error(`Unknown pitch name: ${pitchName}`);
+  }
+
+  return {
+    naturalPitchClass: natural,
+    alteration: accidentalGlyphs.indexOf(pitchName.slice(names.french[natural].length)) - 2,
+  };
 }
 
 export function pitchClassFromMidi(midi: number): number {
@@ -58,7 +72,7 @@ export interface NamedNote {
 
 export function namedNoteFromMidi(midi: number, notation: Notation, spelling?: NoteSpelling): NamedNote {
   const pitchClass = pitchClassFromMidi(midi);
-  const { natural, alteration } = spelling ?? defaultSpelling(pitchClass);
+  const { naturalPitchClass: natural, alteration } = spelling ?? defaultSpelling(pitchClass);
   // The octave follows the letter, so Si♯3 and Do4 share MIDI 60.
   const octave = Math.floor((midi - alteration) / semitonesPerOctave) - 1;
   const baseName = pitchClassName(natural, notation);

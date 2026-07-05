@@ -75,18 +75,18 @@ describe("notation.ts", () => {
     });
 
     it("honors an explicit spelling", () => {
-      expect(namedNoteFromMidi(63, "french", { natural: 4, alteration: -1 }).name).toBe("Mi♭4");
-      expect(namedNoteFromMidi(63, "international", { natural: 4, alteration: -1 }).name).toBe("E♭4");
+      expect(namedNoteFromMidi(63, "french", { naturalPitchClass: 4, alteration: -1 }).name).toBe("Mi♭4");
+      expect(namedNoteFromMidi(63, "international", { naturalPitchClass: 4, alteration: -1 }).name).toBe("E♭4");
     });
 
     it("supports double accidentals", () => {
-      expect(namedNoteFromMidi(55, "french", { natural: 5, alteration: 2 }).name).toBe("Fa𝄪3");
-      expect(namedNoteFromMidi(57, "french", { natural: 11, alteration: -2 }).name).toBe("Si𝄫3");
+      expect(namedNoteFromMidi(55, "french", { naturalPitchClass: 5, alteration: 2 }).name).toBe("Fa𝄪3");
+      expect(namedNoteFromMidi(57, "french", { naturalPitchClass: 11, alteration: -2 }).name).toBe("Si𝄫3");
     });
 
     it("keeps the octave of the letter, not of the sounding pitch", () => {
-      expect(namedNoteFromMidi(60, "french", { natural: 11, alteration: 1 }).name).toBe("Si♯3");
-      expect(namedNoteFromMidi(59, "french", { natural: 0, alteration: -1 }).name).toBe("Do♭4");
+      expect(namedNoteFromMidi(60, "french", { naturalPitchClass: 11, alteration: 1 }).name).toBe("Si♯3");
+      expect(namedNoteFromMidi(59, "french", { naturalPitchClass: 0, alteration: -1 }).name).toBe("Do♭4");
     });
   });
 
@@ -105,10 +105,10 @@ describe("notation.ts", () => {
 
   describe("spellingName", () => {
     it("formats a spelling in the given notation", () => {
-      expect(spellingName({ natural: 7, alteration: -1 }, "french")).toBe("Sol♭");
-      expect(spellingName({ natural: 7, alteration: -1 }, "international")).toBe("G♭");
-      expect(spellingName({ natural: 0, alteration: 0 }, "french")).toBe("Do");
-      expect(spellingName({ natural: 5, alteration: 2 }, "french")).toBe("Fa𝄪");
+      expect(spellingName({ naturalPitchClass: 7, alteration: -1 }, "french")).toBe("Sol♭");
+      expect(spellingName({ naturalPitchClass: 7, alteration: -1 }, "international")).toBe("G♭");
+      expect(spellingName({ naturalPitchClass: 0, alteration: 0 }, "french")).toBe("Do");
+      expect(spellingName({ naturalPitchClass: 5, alteration: 2 }, "french")).toBe("Fa𝄪");
     });
   });
 

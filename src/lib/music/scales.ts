@@ -1,47 +1,30 @@
-import { NATURAL_PITCH_CLASSES, pitchClassFromMidi, type NoteSpelling } from "./notation";
-import {
-  canonicalStringPositionFromMidi,
-  HIGHEST_CANONICAL_MIDI,
-  LOWEST_PLAYABLE_MIDI,
-  type NoteCandidate,
-} from "./guitar";
+import { NATURAL_PITCH_CLASSES, spellingFromPitchName, spellingName } from "./notation";
+import type { NoteCandidate } from "./guitar";
+import { SCALE_NOTES, type ScaleNoteData, type ScaleQuality } from "./scaleData";
 
-const maxScaleOctaves = 3;
-
-export type ScaleQuality = "major" | "minor" | "harmonicMinor" | "phrygianDominant";
+export type { ScaleQuality } from "./scaleData";
 export type ScaleSize = "heptatonic" | "pentatonic";
 export type ScaleVariant = "standard" | "blues";
 
 interface ScaleMode {
   label: string;
-  intervals: number[];
-  pentatonicRemovals?: number[];
-  pentatonicBlueNote?: number;
   relative?: { offset: number; quality: ScaleQuality };
 }
 
 const modes: Record<ScaleQuality, ScaleMode> = {
   major: {
     label: "Majeur",
-    intervals: [0, 2, 4, 5, 7, 9, 11],
-    pentatonicRemovals: [5, 11],
-    pentatonicBlueNote: 3,
     relative: { offset: 9, quality: "minor" },
   },
   minor: {
     label: "Mineur naturel",
-    intervals: [0, 2, 3, 5, 7, 8, 10],
-    pentatonicRemovals: [2, 8],
-    pentatonicBlueNote: 6,
     relative: { offset: 3, quality: "major" },
   },
   harmonicMinor: {
     label: "Mineur harmonique",
-    intervals: [0, 2, 3, 5, 7, 8, 11],
   },
-  phrygianDominant: {
-    label: "Phrygien dominant",
-    intervals: [0, 1, 4, 5, 7, 8, 10],
+  harmonicMajor: {
+    label: "Majeur harmonique",
   },
 };
 
@@ -64,101 +47,52 @@ export function scaleModeLabel(quality: ScaleQuality): string {
 }
 
 export function scaleSupportsPentatonic(quality: ScaleQuality): boolean {
-  return modes[quality].pentatonicRemovals !== undefined;
+  return SCALE_NOTES[quality].Do.some((note) => note.isPentatonic === true);
 }
 
 export function scaleSupportsBlues(quality: ScaleQuality): boolean {
-  return modes[quality].pentatonicBlueNote !== undefined;
+  return SCALE_NOTES[quality].Do.some((note) => note.isBlue === true);
 }
 
-export function scaleIntervals(config: ScaleConfig): number[] {
-  const mode = modes[config.quality];
-  const removals = mode.pentatonicRemovals;
-  const isPentatonic = config.size === "pentatonic" && removals !== undefined;
-  const baseScale = isPentatonic
-    ? mode.intervals.filter((interval) => !removals.includes(interval))
-    : mode.intervals;
-
-  const intervals = new Set(baseScale);
-  // The blue note is a pentatonic device, so it only applies to the pentatonic scale.
-  if (config.variant === "blues" && isPentatonic && mode.pentatonicBlueNote !== undefined) {
-    intervals.add(mode.pentatonicBlueNote);
-  }
-
-  return [...intervals].sort((a, b) => a - b);
-}
-
-export function scaleSpellings(config: ScaleConfig): Map<number, NoteSpelling> {
-  const mode = modes[config.quality];
-  const rootNatural = config.rootNatural
+function scaleNotesFor(config: ScaleConfig): ScaleNoteData[] {
+  const natural = config.rootNatural
     ?? (NATURAL_PITCH_CLASSES.includes(config.root) ? config.root : config.root - 1);
-  const rootLetterIndex = NATURAL_PITCH_CLASSES.indexOf(rootNatural);
+  const alteration = ((config.root - natural + 18) % 12) - 6;
+  const rootName = spellingName({ naturalPitchClass: natural, alteration }, "french");
 
-  const spellings = new Map<number, NoteSpelling>();
-  mode.intervals.forEach((interval, degree) => {
-    const natural = NATURAL_PITCH_CLASSES[(rootLetterIndex + degree) % NATURAL_PITCH_CLASSES.length];
-    const pitchClass = (config.root + interval) % 12;
-    const alteration = ((pitchClass - natural + 18) % 12) - 6;
-    spellings.set(pitchClass, { natural, alteration });
-  });
-
-  // The blue note borrows the letter of the degree above it, flattened (♭5 of La mineur is Mi♭).
-  if (mode.pentatonicBlueNote !== undefined) {
-    const bluePitchClass = (config.root + mode.pentatonicBlueNote) % 12;
-    const degreeAbove = spellings.get((bluePitchClass + 1) % 12);
-    if (degreeAbove !== undefined && !spellings.has(bluePitchClass)) {
-      spellings.set(bluePitchClass, { natural: degreeAbove.natural, alteration: degreeAbove.alteration - 1 });
-    }
+  const rootScales: Partial<Record<string, ScaleNoteData[]>> = SCALE_NOTES[config.quality];
+  const notes = rootScales[rootName];
+  if (notes === undefined) {
+    throw new Error(`No scale data for ${rootName} ${config.quality}`);
   }
 
-  return spellings;
-}
-
-function rootMidiFor(root: number): number {
-  let rootMidi = LOWEST_PLAYABLE_MIDI;
-  while (pitchClassFromMidi(rootMidi) !== root) {
-    rootMidi++;
-  }
-
-  return rootMidi;
+  return notes;
 }
 
 export function scaleNotesFromConfig(config: ScaleConfig, octaves = 1): NoteCandidate[] {
-  const rootMidi = rootMidiFor(config.root);
-  const intervals = scaleIntervals(config);
-  const spellings = scaleSpellings(config);
-
-  const midis = Array.from({ length: octaves }, (_, octave) => octave).flatMap((octave) =>
-    intervals.map((interval) => rootMidi + interval + 12 * octave),
-  );
+  const notes = scaleNotesFor(config);
+  // The blue note is a pentatonic device, so it only applies to the pentatonic scale.
+  const isPentatonic = config.size === "pentatonic" && scaleSupportsPentatonic(config.quality);
+  const hasBlueNotes = config.variant === "blues" && isPentatonic;
   // Scales are practiced up to the closing tonic (do, ré, … si, do).
-  midis.push(rootMidi + 12 * octaves);
+  const closingTonicMidi = notes[0].midi + 12 * octaves;
 
-  return midis.map((midi) => {
-    const position = canonicalStringPositionFromMidi(midi);
-
-    return {
-      stringIndex: position.stringIndex,
-      fretIndex: position.fretIndex,
-      midi,
-      spelling: spellings.get(pitchClassFromMidi(midi)),
+  return notes
+    .filter((note) => note.midi <= closingTonicMidi)
+    .filter((note) => (note.isBlue === true ? hasBlueNotes : !isPentatonic || note.isPentatonic === true))
+    .map((note) => ({
+      stringIndex: note.stringIndex,
+      fretIndex: note.fretIndex,
+      midi: note.midi,
+      spelling: spellingFromPitchName(note.name),
       isValidated: false,
-    };
-  });
+    }));
 }
 
 export function maxPlayableOctaves(config: ScaleConfig): number {
-  const rootMidi = rootMidiFor(config.root);
+  const notes = scaleNotesFor(config);
 
-  let max = 1;
-  for (let octaves = 2; octaves <= maxScaleOctaves; octaves++) {
-    // The closing tonic, one octave above the last cycle, is the highest note of the series.
-    if (rootMidi + 12 * octaves <= HIGHEST_CANONICAL_MIDI) {
-      max = octaves;
-    }
-  }
-
-  return max;
+  return (notes[notes.length - 1].midi - notes[0].midi) / 12;
 }
 
 export function relativeScale(

@@ -31,7 +31,7 @@ describe("clampScaleState", () => {
   });
 
   it("falls back to a standard heptatonic when the quality has no pentatonic", () => {
-    const clamped = clampScaleState(makeState({ quality: "phrygianDominant", size: "pentatonic", variant: "blues" }));
+    const clamped = clampScaleState(makeState({ quality: "harmonicMinor", size: "pentatonic", variant: "blues" }));
 
     expect(clamped).toMatchObject({ size: "heptatonic", variant: "standard" });
   });
@@ -84,7 +84,7 @@ describe("relativeScaleState", () => {
   });
 
   it("returns the state unchanged when the quality has no relative", () => {
-    const state = makeState({ quality: "phrygianDominant" });
+    const state = makeState({ quality: "harmonicMinor" });
 
     const relative = relativeScaleState(state);
 

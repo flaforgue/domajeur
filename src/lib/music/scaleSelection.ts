@@ -1,6 +1,7 @@
 import { clamp } from "../math";
-import { pitchClassFromMidi, type NoteSpelling } from "./notation";
+import { pitchClassFromMidi, spellingFromPitchName, type NoteSpelling } from "./notation";
 import type { NoteCandidate } from "./guitar";
+import { SCALE_ROOT_NAMES } from "./scaleData";
 import {
   maxPlayableOctaves,
   relativeScale,
@@ -13,29 +14,12 @@ import {
   type ScaleVariant,
 } from "./scales";
 
-const rootSpellings: NoteSpelling[] = [
-  { natural: 0, alteration: 0 }, // Do
-  { natural: 0, alteration: 1 }, // Do♯
-  { natural: 2, alteration: -1 }, // Ré♭
-  { natural: 2, alteration: 0 }, // Ré
-  { natural: 2, alteration: 1 }, // Ré♯
-  { natural: 4, alteration: -1 }, // Mi♭
-  { natural: 4, alteration: 0 }, // Mi
-  { natural: 5, alteration: 0 }, // Fa
-  { natural: 5, alteration: 1 }, // Fa♯
-  { natural: 7, alteration: -1 }, // Sol♭
-  { natural: 7, alteration: 0 }, // Sol
-  { natural: 7, alteration: 1 }, // Sol♯
-  { natural: 9, alteration: -1 }, // La♭
-  { natural: 9, alteration: 0 }, // La
-  { natural: 9, alteration: 1 }, // La♯
-  { natural: 11, alteration: -1 }, // Si♭
-  { natural: 11, alteration: 0 }, // Si
-  { natural: 0, alteration: -1 }, // Do♭
-];
+export const SCALE_ROOTS: { pitchClass: number; spelling: NoteSpelling }[] = SCALE_ROOT_NAMES.map(
+  (name) => {
+    const spelling = spellingFromPitchName(name);
 
-export const SCALE_ROOTS: { pitchClass: number; spelling: NoteSpelling }[] = rootSpellings.map(
-  (spelling) => ({ pitchClass: pitchClassFromMidi(spelling.natural + spelling.alteration), spelling }),
+    return { pitchClass: pitchClassFromMidi(spelling.naturalPitchClass + spelling.alteration), spelling };
+  },
 );
 
 export interface ScaleSelectorState {
@@ -59,7 +43,7 @@ export const DEFAULT_SCALE_STATE: ScaleSelectorState = {
 export function scaleConfigFromState(state: ScaleSelectorState): ScaleConfig {
   return {
     root: SCALE_ROOTS[state.rootIndex].pitchClass,
-    rootNatural: SCALE_ROOTS[state.rootIndex].spelling.natural,
+    rootNatural: SCALE_ROOTS[state.rootIndex].spelling.naturalPitchClass,
     quality: state.quality,
     size: state.size,
     variant: state.variant,
