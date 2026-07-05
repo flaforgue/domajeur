@@ -53,7 +53,7 @@ export function ScaleSelector({ state, onChange }: Props) {
     (scaleType) => scaleType.size === state.size && scaleType.variant === state.variant,
   );
   const hasRelative = relativeScale(SCALE_ROOTS[state.rootIndex].pitchClass, state.quality) !== null;
-  const maxOctaves = maxPlayableOctaves(scaleConfigFromState(state));
+  const maxOctaves = maxPlayableOctaves(scaleConfigFromState(state), state.isClosedPosition);
 
   return (
     <>
@@ -134,6 +134,17 @@ export function ScaleSelector({ state, onChange }: Props) {
           onChange({ ...state, octaves: Number(value) });
         }}
       />
+
+      <ToggleSwitch
+        isChecked={state.isClosedPosition}
+        onChange={(isChecked) => {
+          onChange(clampScaleState({ ...state, isClosedPosition: isChecked }));
+        }}
+      >
+        <HintedLabel hint="Jouer la gamme sans cordes à vide, avec un motif transposable sur le manche.">
+          Position fermée
+        </HintedLabel>
+      </ToggleSwitch>
 
       <ToggleSwitch
         isChecked={state.isRoundTrip}

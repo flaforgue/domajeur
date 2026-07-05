@@ -5,7 +5,7 @@ import { useMuted } from "../../hooks/useMuted";
 import { useSpacebar } from "../../hooks/useSpacebar";
 import { useWakeLock } from "../../hooks/useWakeLock";
 import { frequencyFromMidi } from "../../lib/music/notation";
-import { randomNote, stringPositionsForMidi } from "../../lib/music/guitar";
+import { MAX_PLAYABLE_FRET, randomNote, stringPositionsForMidi } from "../../lib/music/guitar";
 import { scaleSeriesFromState, type ScaleSelectorState } from "../../lib/music/scaleSelection";
 import { useLatest } from "../../hooks/useLatest";
 import { useTimeout } from "../../hooks/useTimeout";
@@ -26,7 +26,7 @@ import { ScaleDiagram } from "./components/ScaleDiagram";
 import { useNoteValidation } from "./useNoteValidation";
 import { useScalePlayback } from "./useScalePlayback";
 import { useTrainerState } from "./useTrainerState";
-import { DEFAULT_FRET_MAX, type TrainerMode } from "./trainerReducer";
+import type { TrainerMode } from "./trainerReducer";
 
 export function Trainer() {
   const { engine, isStarted } = usePitch();
@@ -38,7 +38,7 @@ export function Trainer() {
 
   const currentNote = state.currentIndex >= 0 ? state.notes[state.currentIndex] : null;
   const validatedCount = state.notes.filter((note) => note.isValidated).length;
-  const effectiveMaxFret = state.mode === "free" ? state.fretMax : DEFAULT_FRET_MAX;
+  const effectiveMaxFret = state.mode === "free" ? state.fretMax : MAX_PLAYABLE_FRET;
   const isCheckVisible = state.uiState === "success" || state.uiState === "flash";
   const lastMidi = state.notes[state.notes.length - 1]?.midi ?? null;
 

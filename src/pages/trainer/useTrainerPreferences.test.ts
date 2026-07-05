@@ -9,7 +9,16 @@ function serialized(overrides: Record<string, unknown> = {}, scale: Record<strin
     fretMax: 7,
     shouldAutoAdvance: false,
     shouldPlayOnAdvance: false,
-    scale: { rootIndex: 3, quality: "minor", size: "pentatonic", variant: "blues", octaves: 2, isRoundTrip: true, ...scale },
+    scale: {
+      rootIndex: 3,
+      quality: "minor",
+      size: "pentatonic",
+      variant: "blues",
+      octaves: 2,
+      isClosedPosition: true,
+      isRoundTrip: true,
+      ...scale,
+    },
     ...overrides,
   });
 }
@@ -22,7 +31,15 @@ describe("parseTrainerPreferences", () => {
       fretMax: 7,
       shouldAutoAdvance: false,
       shouldPlayOnAdvance: false,
-      scale: { rootIndex: 3, quality: "minor", size: "pentatonic", variant: "blues", octaves: 2, isRoundTrip: true },
+      scale: {
+        rootIndex: 3,
+        quality: "minor",
+        size: "pentatonic",
+        variant: "blues",
+        octaves: 2,
+        isClosedPosition: true,
+        isRoundTrip: true,
+      },
     });
   });
 

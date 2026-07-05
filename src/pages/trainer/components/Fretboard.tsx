@@ -64,7 +64,7 @@ export function Fretboard({ pos, altPositions = [], scaleNotes = [], maxFret }: 
           strokeWidth={0.7 + (stringCount - 1 - i) * 0.22}
         />
       ))}
-      {[3, 5, 7, 9, 12].filter((f) => f <= frets).map((f) => (
+      {[3, 5, 7, 9, 12, 15, 17].filter((f) => f <= frets).map((f) => (
         <circle
           key={`m${f}`}
           cx={fretX(f) - fretGap / 2}

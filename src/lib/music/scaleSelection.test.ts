@@ -50,6 +50,15 @@ describe("clampScaleState", () => {
 
     expect(clamped.octaves).toBe(expected);
   });
+
+  it("clamps the octaves to the closed pattern range for a Mi major", () => {
+    const miIndex = 6;
+    const open = clampScaleState(makeState({ rootIndex: miIndex, octaves: 3 }));
+    const closed = clampScaleState(makeState({ rootIndex: miIndex, octaves: 3, isClosedPosition: true }));
+
+    expect(open.octaves).toBe(3);
+    expect(closed.octaves).toBe(2);
+  });
 });
 
 describe("relativeScaleState", () => {
@@ -128,12 +137,20 @@ describe("scaleSeriesFromState", () => {
     expect(series[0]).toEqual(series[series.length - 1]);
   });
 
+  it("uses only fretted positions when the closed position is enabled", () => {
+    const openSeries = scaleSeriesFromState(makeState());
+    const closedSeries = scaleSeriesFromState(makeState({ isClosedPosition: true }));
+
+    expect(closedSeries.map((note) => note.midi)).toEqual(openSeries.map((note) => note.midi));
+    expect(closedSeries.every((note) => note.fretIndex > 0)).toBe(true);
+  });
+
   it("spells the series according to the chosen root spelling", () => {
     const sharpSeries = scaleSeriesFromState(makeState({ rootIndex: doSharpIndex }));
     const flatSeries = scaleSeriesFromState(makeState({ rootIndex: reFlatIndex }));
 
-    expect(sharpSeries[0].spelling).toEqual({ natural: 0, alteration: 1 });
-    expect(flatSeries[0].spelling).toEqual({ natural: 2, alteration: -1 });
+    expect(sharpSeries[0].spelling).toEqual({ naturalPitchClass: 0, alteration: 1 });
+    expect(flatSeries[0].spelling).toEqual({ naturalPitchClass: 2, alteration: -1 });
   });
 
   it("starts every note unvalidated", () => {

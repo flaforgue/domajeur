@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { namedNoteFromMidi, spellingFromPitchName } from "./notation";
-import { STRINGS } from "./guitar";
-import { SCALE_NOTES, SCALE_ROOT_NAMES } from "./scaleData";
+import { MAX_PLAYABLE_FRET, STRINGS } from "./guitar";
+import { CLOSED_POSITIONS, SCALE_NOTES, SCALE_ROOT_NAMES } from "./scaleData";
 import {
   isScaleQuality,
   maxPlayableOctaves,
@@ -25,6 +25,7 @@ describe("scales.ts", () => {
       SCALE_ROOT_NAMES.map((rootName) => ({
         title: `${rootName} ${quality}`,
         notes: SCALE_NOTES[quality][rootName],
+        closedPatterns: CLOSED_POSITIONS[quality][rootName],
       })),
     );
 
@@ -41,8 +42,45 @@ describe("scales.ts", () => {
       for (const { notes } of scales) {
         for (const note of notes) {
           expect(note.fretIndex).toBeGreaterThanOrEqual(0);
-          expect(note.fretIndex).toBeLessThanOrEqual(12);
+          expect(note.fretIndex).toBeLessThanOrEqual(MAX_PLAYABLE_FRET);
           expect(STRINGS[note.stringIndex].midi + note.fretIndex).toBe(note.midi);
+        }
+      }
+    });
+
+    it("provides a closed pattern per octave count, covering exactly the notes of the range", () => {
+      for (const { title, notes, closedPatterns } of scales) {
+        // A closed scale cannot start on the open low E, so those scales start one octave up.
+        const base = notes[0].midi === STRINGS[0].midi
+          ? notes.filter((note) => note.midi >= notes[0].midi + 12)
+          : notes;
+        // A single box covers two octaves at most: three octaves need more than 3 notes per string.
+        expect(closedPatterns.length, title).toBe(Math.min(2, (base[base.length - 1].midi - base[0].midi) / 12));
+
+        closedPatterns.forEach((pattern, index) => {
+          const midis = pattern.flatMap(({ stringIndex, frets }) =>
+            frets.map((fret) => STRINGS[stringIndex].midi + fret));
+          const expected = base
+            .filter((note) => note.midi <= base[0].midi + 12 * (index + 1))
+            .map((note) => note.midi);
+          expect(midis, `${title}, ${index + 1} octave(s)`).toEqual(expected);
+        });
+      }
+    });
+
+    it("keeps every closed pattern fretted, compact and in playing order", () => {
+      for (const { title, closedPatterns } of scales) {
+        for (const pattern of closedPatterns) {
+          const frets = pattern.flatMap((line) => line.frets);
+          expect(Math.min(...frets), title).toBeGreaterThanOrEqual(1);
+          expect(Math.max(...frets), title).toBeLessThanOrEqual(MAX_PLAYABLE_FRET);
+          expect(Math.max(...frets) - Math.min(...frets), title).toBeLessThanOrEqual(6);
+          for (let i = 1; i < pattern.length; i++) {
+            expect(pattern[i].stringIndex, title).toBeGreaterThan(pattern[i - 1].stringIndex);
+          }
+          for (const line of pattern) {
+            expect([...line.frets].sort((a, b) => a - b), title).toEqual(line.frets);
+          }
         }
       }
     });
@@ -180,6 +218,42 @@ describe("scales.ts", () => {
       expect(midis).toEqual([45, 48, 50, 52, 55, 57]);
     });
 
+    it("plays the closed position as the official box, keeping the same notes", () => {
+      const openSeries = scaleNotesFromConfig(config());
+      const closedSeries = scaleNotesFromConfig(config(), 1, true);
+
+      expect(closedSeries.map((note) => note.midi)).toEqual(openSeries.map((note) => note.midi));
+      expect(closedSeries.map((note) => [note.stringIndex, note.fretIndex])).toEqual([
+        [1, 3], [1, 5], [2, 2], [2, 3], [2, 5], [3, 2], [3, 4], [3, 5],
+      ]);
+    });
+
+    it("plays the two-octave closed position as the official box", () => {
+      const notes = scaleNotesFromConfig(config(), 2, true);
+
+      expect(notes.map((note) => [note.stringIndex, note.fretIndex])).toEqual([
+        [0, 8], [0, 10], [1, 7], [1, 8], [1, 10], [2, 7], [2, 9], [2, 10],
+        [3, 7], [3, 9], [3, 10], [4, 8], [4, 10], [5, 7], [5, 8],
+      ]);
+    });
+
+    it("plays La minor pentatonic in closed position as the classic box 1", () => {
+      const notes = scaleNotesFromConfig(config({ root: 9, quality: "minor", size: "pentatonic" }), 1, true);
+
+      expect(notes.map((note) => [note.stringIndex, note.fretIndex])).toEqual([
+        [0, 5], [0, 8], [1, 5], [1, 7], [2, 5], [2, 7],
+      ]);
+    });
+
+    it("starts the Mi scale one octave up in closed position since the open low E cannot be fretted", () => {
+      const openSeries = scaleNotesFromConfig(config({ root: 4 }));
+      const closedSeries = scaleNotesFromConfig(config({ root: 4 }), 1, true);
+
+      expect(openSeries[0].midi).toBe(40);
+      expect(closedSeries.map((note) => note.midi)).toEqual(openSeries.map((note) => note.midi + 12));
+      expect(closedSeries.every((note) => note.fretIndex > 0)).toBe(true);
+    });
+
     it("returns notes that are not pre-validated and have a playable position", () => {
       for (const note of scaleNotesFromConfig(config({ root: 7 }))) {
         expect(note.isValidated).toBe(false);
@@ -197,6 +271,13 @@ describe("scales.ts", () => {
         52, 54, 56, 57, 59, 61, 63,
         64,
       ]);
+    });
+
+    it("climbs up to the 17th fret for a three-octave La major", () => {
+      const notes = scaleNotesFromConfig(config({ root: 9 }), 3);
+
+      expect(notes[0].midi).toBe(45);
+      expect(notes[notes.length - 1]).toMatchObject({ midi: 81, stringIndex: 5, fretIndex: 17 });
     });
   });
 
@@ -244,18 +325,25 @@ describe("scales.ts", () => {
   describe("maxPlayableOctaves", () => {
     it("allows three octaves for the lowest roots", () => {
       expect(maxPlayableOctaves(config({ root: 4 }))).toBe(3); // E, root MIDI 40
+      expect(maxPlayableOctaves(config({ root: 9 }))).toBe(3); // A, root MIDI 45, closes on the 17th fret
     });
 
-    it("caps roots that would overflow the 12th fret", () => {
+    it("caps roots that would overflow the 17th fret", () => {
       expect(maxPlayableOctaves(config({ root: 0 }))).toBe(2); // C, root MIDI 48
-      expect(maxPlayableOctaves(config({ root: 9 }))).toBe(2); // A, root MIDI 45
+      expect(maxPlayableOctaves(config({ root: 10 }))).toBe(2); // A♯, root MIDI 46
+    });
+
+    it("caps every scale at two octaves in closed position since a box cannot span three", () => {
+      expect(maxPlayableOctaves(config({ root: 4 }), true)).toBe(2); // E also starts one octave up
+      expect(maxPlayableOctaves(config({ root: 9 }), true)).toBe(2);
+      expect(maxPlayableOctaves(config({ root: 0 }), true)).toBe(2);
     });
 
     it("stays within the highest canonical position for every root", () => {
       for (let root = 0; root < 12; root++) {
         const octaves = maxPlayableOctaves(config({ root }));
         for (const note of scaleNotesFromConfig(config({ root }), octaves)) {
-          expect(note.midi).toBeLessThanOrEqual(76);
+          expect(note.midi).toBeLessThanOrEqual(STRINGS[5].midi + MAX_PLAYABLE_FRET);
         }
       }
     });

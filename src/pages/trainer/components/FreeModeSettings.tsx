@@ -1,3 +1,4 @@
+import { MAX_PLAYABLE_FRET } from "../../../lib/music/guitar";
 import { ToggleSwitch } from "../../../components/inputs/ToggleSwitch";
 import { HintedLabel } from "../../../components/HintedLabel";
 
@@ -52,7 +53,7 @@ export function FreeModeSettings({
               accent-brass
             `}
             min={0}
-            max={12}
+            max={MAX_PLAYABLE_FRET}
             value={fretMax}
             onChange={(event) => {
               onFretMaxChange(Number(event.target.value));

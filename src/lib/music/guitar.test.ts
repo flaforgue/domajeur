@@ -47,6 +47,11 @@ describe("guitar.ts", () => {
       expect(canonicalStringPositionFromMidi(45)).toEqual({ stringIndex: 1, fretIndex: 0 });
       expect(canonicalStringPositionFromMidi(40)).toEqual({ stringIndex: 0, fretIndex: 0 });
     });
+
+    it("reaches the notes above the 12th fret on the high E string", () => {
+      expect(canonicalStringPositionFromMidi(77)).toEqual({ stringIndex: 5, fretIndex: 13 });
+      expect(canonicalStringPositionFromMidi(81)).toEqual({ stringIndex: 5, fretIndex: 17 });
+    });
   });
 
   describe("randomNote", () => {

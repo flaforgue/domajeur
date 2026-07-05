@@ -28,6 +28,7 @@ export interface ScaleSelectorState {
   size: ScaleSize;
   variant: ScaleVariant;
   octaves: number;
+  isClosedPosition: boolean;
   isRoundTrip: boolean;
 }
 
@@ -37,6 +38,7 @@ export const DEFAULT_SCALE_STATE: ScaleSelectorState = {
   size: "heptatonic",
   variant: "standard",
   octaves: 1,
+  isClosedPosition: false,
   isRoundTrip: false,
 };
 
@@ -51,7 +53,7 @@ export function scaleConfigFromState(state: ScaleSelectorState): ScaleConfig {
 }
 
 export function scaleSeriesFromState(state: ScaleSelectorState): NoteCandidate[] {
-  const ascending = scaleNotesFromConfig(scaleConfigFromState(state), state.octaves);
+  const ascending = scaleNotesFromConfig(scaleConfigFromState(state), state.octaves, state.isClosedPosition);
   if (!state.isRoundTrip) {
     return ascending;
   }
@@ -70,7 +72,10 @@ export function clampScaleState(state: ScaleSelectorState): ScaleSelectorState {
     : "standard";
   const clamped = { ...state, size, variant };
 
-  return { ...clamped, octaves: clamp(clamped.octaves, 1, maxPlayableOctaves(scaleConfigFromState(clamped))) };
+  return {
+    ...clamped,
+    octaves: clamp(clamped.octaves, 1, maxPlayableOctaves(scaleConfigFromState(clamped), clamped.isClosedPosition)),
+  };
 }
 
 export function relativeScaleState(state: ScaleSelectorState): ScaleSelectorState {

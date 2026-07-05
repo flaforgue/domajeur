@@ -20,7 +20,7 @@ export interface TrainerState {
   validationNonce: number;
 }
 
-export const DEFAULT_FRET_MAX = 12;
+const defaultFretMax = 12;
 const delayBetweenNotesMs = 500;
 const scaleDelayBetweenNotesMs = 150;
 
@@ -31,7 +31,7 @@ export const INITIAL_TRAINER_STATE: TrainerState = {
   shouldAutoAdvance: true,
   shouldPlayOnAdvance: true,
   isNaturalsOnly: true,
-  fretMax: DEFAULT_FRET_MAX,
+  fretMax: defaultFretMax,
   uiState: "listening",
   isSolutionShown: false,
   advanceDelayMs: null,

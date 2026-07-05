@@ -1,6 +1,12 @@
 import { NATURAL_PITCH_CLASSES, spellingFromPitchName, spellingName } from "./notation";
-import type { NoteCandidate } from "./guitar";
-import { SCALE_NOTES, type ScaleNoteData, type ScaleQuality } from "./scaleData";
+import { STRINGS, type NoteCandidate } from "./guitar";
+import {
+  CLOSED_POSITIONS,
+  SCALE_NOTES,
+  type ClosedPositionPattern,
+  type ScaleNoteData,
+  type ScaleQuality,
+} from "./scaleData";
 
 export type { ScaleQuality } from "./scaleData";
 export type ScaleSize = "heptatonic" | "pentatonic";
@@ -13,8 +19,11 @@ interface ScaleMode {
 
 const modes: Record<ScaleQuality, ScaleMode> = {
   major: {
-    label: "Majeur",
+    label: "Majeur naturel",
     relative: { offset: 9, quality: "minor" },
+  },
+  harmonicMajor: {
+    label: "Majeur harmonique",
   },
   minor: {
     label: "Mineur naturel",
@@ -22,9 +31,6 @@ const modes: Record<ScaleQuality, ScaleMode> = {
   },
   harmonicMinor: {
     label: "Mineur harmonique",
-  },
-  harmonicMajor: {
-    label: "Majeur harmonique",
   },
 };
 
@@ -54,12 +60,16 @@ export function scaleSupportsBlues(quality: ScaleQuality): boolean {
   return SCALE_NOTES[quality].Do.some((note) => note.isBlue === true);
 }
 
-function scaleNotesFor(config: ScaleConfig): ScaleNoteData[] {
+function rootNameFor(config: ScaleConfig): string {
   const natural = config.rootNatural
     ?? (NATURAL_PITCH_CLASSES.includes(config.root) ? config.root : config.root - 1);
   const alteration = ((config.root - natural + 18) % 12) - 6;
-  const rootName = spellingName({ naturalPitchClass: natural, alteration }, "french");
 
+  return spellingName({ naturalPitchClass: natural, alteration }, "french");
+}
+
+function scaleNotesFor(config: ScaleConfig): ScaleNoteData[] {
+  const rootName = rootNameFor(config);
   const rootScales: Partial<Record<string, ScaleNoteData[]>> = SCALE_NOTES[config.quality];
   const notes = rootScales[rootName];
   if (notes === undefined) {
@@ -69,27 +79,75 @@ function scaleNotesFor(config: ScaleConfig): ScaleNoteData[] {
   return notes;
 }
 
-export function scaleNotesFromConfig(config: ScaleConfig, octaves = 1): NoteCandidate[] {
-  const notes = scaleNotesFor(config);
-  // The blue note is a pentatonic device, so it only applies to the pentatonic scale.
-  const isPentatonic = config.size === "pentatonic" && scaleSupportsPentatonic(config.quality);
-  const hasBlueNotes = config.variant === "blues" && isPentatonic;
-  // Scales are practiced up to the closing tonic (do, ré, … si, do).
+function closedPatternsFor(config: ScaleConfig): ClosedPositionPattern[][] {
+  const rootName = rootNameFor(config);
+  const rootPatterns: Partial<Record<string, ClosedPositionPattern[][]>> = CLOSED_POSITIONS[config.quality];
+  const patterns = rootPatterns[rootName];
+  if (patterns === undefined) {
+    throw new Error(`No closed positions for ${rootName} ${config.quality}`);
+  }
+
+  return patterns;
+}
+
+interface PlayableNote {
+  note: ScaleNoteData;
+  stringIndex: number;
+  fretIndex: number;
+}
+
+function openSeries(notes: ScaleNoteData[], octaves: number): PlayableNote[] {
   const closingTonicMidi = notes[0].midi + 12 * octaves;
 
   return notes
     .filter((note) => note.midi <= closingTonicMidi)
-    .filter((note) => (note.isBlue === true ? hasBlueNotes : !isPentatonic || note.isPentatonic === true))
-    .map((note) => ({
-      stringIndex: note.stringIndex,
-      fretIndex: note.fretIndex,
+    .map((note) => ({ note, stringIndex: note.stringIndex, fretIndex: note.fretIndex }));
+}
+
+function closedSeries(config: ScaleConfig, notes: ScaleNoteData[], octaves: number): PlayableNote[] {
+  const patterns = closedPatternsFor(config);
+  const pattern = patterns[Math.min(octaves, patterns.length) - 1];
+  const notesByMidi = new Map(notes.map((note) => [note.midi, note]));
+
+  return pattern.flatMap(({ stringIndex, frets }) =>
+    frets.map((fretIndex) => {
+      const note = notesByMidi.get(STRINGS[stringIndex].midi + fretIndex);
+      if (note === undefined) {
+        throw new Error(`Closed position (${stringIndex}, ${fretIndex}) matches no note of the scale`);
+      }
+
+      return { note, stringIndex, fretIndex };
+    }),
+  );
+}
+
+export function scaleNotesFromConfig(
+  config: ScaleConfig,
+  octaves = 1,
+  isClosedPosition = false,
+): NoteCandidate[] {
+  const notes = scaleNotesFor(config);
+  // The blue note is a pentatonic device, so it only applies to the pentatonic scale.
+  const isPentatonic = config.size === "pentatonic" && scaleSupportsPentatonic(config.quality);
+  const hasBlueNotes = config.variant === "blues" && isPentatonic;
+  const series = isClosedPosition ? closedSeries(config, notes, octaves) : openSeries(notes, octaves);
+
+  return series
+    .filter(({ note }) => (note.isBlue === true ? hasBlueNotes : !isPentatonic || note.isPentatonic === true))
+    .map(({ note, stringIndex, fretIndex }) => ({
+      stringIndex,
+      fretIndex,
       midi: note.midi,
       spelling: spellingFromPitchName(note.name),
       isValidated: false,
     }));
 }
 
-export function maxPlayableOctaves(config: ScaleConfig): number {
+export function maxPlayableOctaves(config: ScaleConfig, isClosedPosition = false): number {
+  if (isClosedPosition) {
+    return closedPatternsFor(config).length;
+  }
+
   const notes = scaleNotesFor(config);
 
   return (notes[notes.length - 1].midi - notes[0].midi) / 12;

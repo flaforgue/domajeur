@@ -44,6 +44,7 @@ function parseScale(value: unknown): ScaleSelectorState {
     size: scale.size === "pentatonic" ? "pentatonic" : "heptatonic",
     variant: scale.variant === "blues" ? "blues" : "standard",
     octaves: typeof scale.octaves === "number" ? scale.octaves : DEFAULT_SCALE_STATE.octaves,
+    isClosedPosition: scale.isClosedPosition === true,
     isRoundTrip: scale.isRoundTrip === true,
   });
 }

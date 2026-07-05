@@ -17,7 +17,7 @@ export const STRINGS: { midi: number; suffix: string }[] = [
 
 const lowestPlayableMidi = STRINGS[0].midi;
 
-const maxFretForCanonicalPosition = 12;
+export const MAX_PLAYABLE_FRET = 17;
 
 export interface StringPosition { stringIndex: number; fretIndex: number }
 export interface ScaleMarker extends StringPosition { isRoot: boolean }
@@ -60,7 +60,7 @@ export function canonicalStringPositionFromMidi(midi: number): StringPosition {
     const fretIndex = midi - STRINGS[stringIndex].midi;
     if (
       fretIndex >= 0
-      && fretIndex <= maxFretForCanonicalPosition
+      && fretIndex <= MAX_PLAYABLE_FRET
       && (bestMatch === null || fretIndex < bestMatch.fretIndex)
     ) {
       bestMatch = { stringIndex, fretIndex };
