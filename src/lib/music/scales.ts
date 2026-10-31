@@ -32,6 +32,9 @@ const modes: Record<ScaleQuality, ScaleMode> = {
   harmonicMinor: {
     label: "Mineur harmonique",
   },
+  phrygianDominant: {
+    label: "Phrygien dominant",
+  },
 };
 
 export const SCALE_QUALITIES = Object.keys(modes) as ScaleQuality[];

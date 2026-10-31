@@ -1,4 +1,4 @@
-import { CrosshairIcon, GaugeIcon, GuitarIcon, ListMusicIcon, MetronomeIcon } from "lucide-react";
+import { ClefTrebleIcon, GaugeIcon, GuitarIcon, ListMusicIcon, MetronomeIcon } from "lucide-react";
 import { Flex } from "../layout/Flex";
 import { InstallButton } from "./InstallButton";
 import { MuteButton } from "./MuteButton";
@@ -68,17 +68,17 @@ export function Navbar() {
           max-md:justify-end
         `}
       >
-        <NavBarLink to="/" end>
-          <GuitarIcon width="20" height="20" />
-          <span className="max-md:hidden">Gammes</span>
-        </NavBarLink>
         <NavBarLink to="/manche">
-          <CrosshairIcon width="20" height="20" />
+          <GuitarIcon width="20" height="20" />
           <span className="max-md:hidden">Manche</span>
         </NavBarLink>
         <NavBarLink to="/accords">
           <ListMusicIcon width="20" height="20" />
           <span className="max-md:hidden">Accords</span>
+        </NavBarLink>
+        <NavBarLink to="/" end>
+          <ClefTrebleIcon width="20" height="20" />
+          <span className="max-md:hidden">Gammes</span>
         </NavBarLink>
         <NavBarLink to="/accordeur">
           <GaugeIcon width="20" height="20" />

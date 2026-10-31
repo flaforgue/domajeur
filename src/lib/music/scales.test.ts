@@ -213,6 +213,19 @@ describe("scales.ts", () => {
       expect(notes.map((note) => note.midi)).toEqual([48, 50, 52, 53, 55, 56, 59, 60]);
     });
 
+    it("ignores pentatonic and blues for phrygian dominant since it supports neither", () => {
+      const notes = scaleNotesFromConfig(config({ quality: "phrygianDominant", size: "pentatonic", variant: "blues" }));
+      expect(notes.map((note) => note.midi)).toEqual([48, 49, 52, 53, 55, 56, 58, 60]);
+    });
+
+    it("plays Mi phrygian dominant in the flamenco first position", () => {
+      const notes = scaleNotesFromConfig(config({ root: 4, quality: "phrygianDominant" }));
+
+      expect(notes.map((note) => [note.stringIndex, note.fretIndex])).toEqual([
+        [0, 0], [0, 1], [0, 4], [1, 0], [1, 2], [1, 3], [2, 0], [2, 2],
+      ]);
+    });
+
     it("builds A minor pentatonic from the first playable A (MIDI 45)", () => {
       const midis = scaleNotesFromConfig(config({ root: 9, quality: "minor", size: "pentatonic" })).map((n) => n.midi);
       expect(midis).toEqual([45, 48, 50, 52, 55, 57]);
@@ -242,6 +255,15 @@ describe("scales.ts", () => {
 
       expect(notes.map((note) => [note.stringIndex, note.fretIndex])).toEqual([
         [0, 5], [0, 8], [1, 5], [1, 7], [2, 5], [2, 7],
+      ]);
+    });
+
+    it("plays La phrygian dominant in closed position as the official box 1", () => {
+      const notes = scaleNotesFromConfig(config({ root: 9, quality: "phrygianDominant" }), 2, true);
+
+      expect(notes.map((note) => [note.stringIndex, note.fretIndex])).toEqual([
+        [0, 5], [0, 6], [1, 4], [1, 5], [1, 7], [1, 8], [2, 5], [2, 7],
+        [2, 8], [3, 6], [3, 7], [4, 5], [4, 6], [4, 8], [5, 5],
       ]);
     });
 
@@ -295,6 +317,11 @@ describe("scales.ts", () => {
     it("spells C harmonic major with its flattened 6th", () => {
       expect(pitchNames({ quality: "harmonicMajor" }))
         .toEqual(["Do", "Ré", "Mi", "Fa", "Sol", "La♭", "Si", "Do"]);
+    });
+
+    it("spells Mi phrygian dominant with its flattened 2nd and major 3rd", () => {
+      expect(pitchNames({ root: 4, quality: "phrygianDominant" }))
+        .toEqual(["Mi", "Fa", "Sol♯", "La", "Si", "Do", "Ré", "Mi"]);
     });
 
     it("spells the natural minor scale with flats", () => {
@@ -355,10 +382,11 @@ describe("scales.ts", () => {
       expect(isScaleQuality("minor")).toBe(true);
       expect(isScaleQuality("harmonicMinor")).toBe(true);
       expect(isScaleQuality("harmonicMajor")).toBe(true);
+      expect(isScaleQuality("phrygianDominant")).toBe(true);
     });
 
     it("rejects unknown or non-string values", () => {
-      expect(isScaleQuality("phrygianDominant")).toBe(false);
+      expect(isScaleQuality("dorian")).toBe(false);
       expect(isScaleQuality("lydian")).toBe(false);
       expect(isScaleQuality(undefined)).toBe(false);
       expect(isScaleQuality(null)).toBe(false);
@@ -378,9 +406,10 @@ describe("scales.ts", () => {
       expect(relativeScale(4, "minor")).toEqual({ root: 7, quality: "major" }); // Mi mineur → Sol majeur
     });
 
-    it("has no relative for harmonic minor or harmonic major", () => {
+    it("has no relative for harmonic minor, harmonic major or phrygian dominant", () => {
       expect(relativeScale(0, "harmonicMinor")).toBeNull();
       expect(relativeScale(0, "harmonicMajor")).toBeNull();
+      expect(relativeScale(0, "phrygianDominant")).toBeNull();
     });
 
     it("round-trips a major key back to itself through its relative", () => {
