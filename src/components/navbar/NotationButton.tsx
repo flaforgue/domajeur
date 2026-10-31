@@ -22,6 +22,7 @@ export function NotationButton() {
         py-2
         text-sm
         font-semibold
+        whitespace-nowrap
         text-pearl-dim
         transition
 
@@ -32,7 +33,7 @@ export function NotationButton() {
       }}
     >
       {isInternational ? <GlobeIcon width="18" height="18" /> : <MusicIcon width="18" height="18" />}
-      <span className="max-md:hidden">{isInternational ? "C D E" : "Do Ré Mi"}</span>
+      <span className="max-lg:hidden">{isInternational ? "C D E" : "Do Ré Mi"}</span>
     </button>
   );
 }

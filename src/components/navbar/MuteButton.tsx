@@ -22,6 +22,7 @@ export function MuteButton() {
           py-2
           text-sm
           font-semibold
+          whitespace-nowrap
           transition
         `,
         isMuted
@@ -42,7 +43,7 @@ export function MuteButton() {
       }}
     >
       {isMuted ? <VolumeXIcon width="18" height="18" /> : <Volume2Icon width="18" height="18" />}
-      {isMuted && <span className="max-md:hidden">Son coupé</span>}
+      {isMuted && <span className="max-lg:hidden">Son coupé</span>}
     </button>
   );
 }

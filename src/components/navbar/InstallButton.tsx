@@ -53,6 +53,7 @@ export function InstallButton() {
           py-2
           text-sm
           font-semibold
+          whitespace-nowrap
           text-pearl-dim
           transition
 
@@ -67,7 +68,7 @@ export function InstallButton() {
         }}
       >
         <DownloadIcon width="18" height="18" />
-        <span className="max-md:hidden">Installer</span>
+        <span className="max-lg:hidden">Installer</span>
       </button>
       {isGuideOpen && (
         <Panel
@@ -80,11 +81,6 @@ export function InstallButton() {
             w-66
             px-4
             py-3.5
-
-            max-md:top-auto
-            max-md:bottom-full
-            max-md:mt-0
-            max-md:mb-2
           `}
         >
           <ol

@@ -5,18 +5,32 @@ import { cn } from "../../lib/cn";
 const navBarLink = cva(`
   flex
   items-center
-  gap-1
   rounded-lg
-  px-2.5
-  py-2
-  text-sm
   font-semibold
   no-underline
   transition
-
-  md:px-4
 `, {
   variants: {
+    layout: {
+      inline: `
+        gap-1
+        px-2.5
+        py-2
+        text-sm
+
+        xl:px-4
+      `,
+      tab: `
+        max-w-24
+        min-w-0
+        flex-1
+        flex-col
+        gap-0.5
+        px-1
+        py-1.5
+        text-[11px]
+      `,
+    },
     isActive: {
       true: `
         bg-brass
@@ -37,17 +51,21 @@ const navBarLink = cva(`
       false: "",
     },
   },
-  defaultVariants: { isDisabled: false },
+  defaultVariants: {
+    layout: "inline",
+    isDisabled: false,
+  },
 });
 
 interface NavBarLinkProps extends Omit<NavLinkProps, "className"> {
+  layout?: "inline" | "tab";
   isDisabled?: boolean;
 }
 
-export function NavBarLink({ isDisabled = false, ...props }: NavBarLinkProps) {
+export function NavBarLink({ layout, isDisabled = false, ...props }: NavBarLinkProps) {
   return (
     <NavLink
-      className={({ isActive }) => cn(navBarLink({ isActive, isDisabled }))}
+      className={({ isActive }) => cn(navBarLink({ layout, isActive, isDisabled }))}
       aria-disabled={isDisabled || undefined}
       tabIndex={isDisabled ? -1 : undefined}
       {...props}
