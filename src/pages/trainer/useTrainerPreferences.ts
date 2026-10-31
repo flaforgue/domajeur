@@ -8,30 +8,16 @@ import {
 } from "../../lib/music/scaleSelection";
 import { INITIAL_TRAINER_STATE } from "./trainerReducer";
 
-interface NeckPreferences {
-  isNaturalsOnly: boolean;
-  fretMax: number;
-  shouldAutoAdvance: boolean;
-  shouldPlayOnAdvance: boolean;
-}
-
 interface ScalesPreferences {
   shouldAutoAdvance: boolean;
   scale: ScaleSelectorState;
 }
 
 export interface TrainerPreferences {
-  neck: NeckPreferences;
   scales: ScalesPreferences;
 }
 
 const defaultPreferences: TrainerPreferences = {
-  neck: {
-    isNaturalsOnly: INITIAL_TRAINER_STATE.isNaturalsOnly,
-    fretMax: INITIAL_TRAINER_STATE.fretMax,
-    shouldAutoAdvance: INITIAL_TRAINER_STATE.shouldAutoAdvance,
-    shouldPlayOnAdvance: INITIAL_TRAINER_STATE.shouldPlayOnAdvance,
-  },
   scales: {
     shouldAutoAdvance: INITIAL_TRAINER_STATE.shouldAutoAdvance,
     scale: DEFAULT_SCALE_STATE,
@@ -61,17 +47,6 @@ function parseScaleState(value: unknown): ScaleSelectorState {
   });
 }
 
-function parseNeck(value: unknown): NeckPreferences {
-  const neck = (typeof value === "object" && value !== null ? value : {}) as Partial<NeckPreferences>;
-
-  return {
-    isNaturalsOnly: neck.isNaturalsOnly ?? defaultPreferences.neck.isNaturalsOnly,
-    fretMax: neck.fretMax ?? defaultPreferences.neck.fretMax,
-    shouldAutoAdvance: neck.shouldAutoAdvance ?? defaultPreferences.neck.shouldAutoAdvance,
-    shouldPlayOnAdvance: neck.shouldPlayOnAdvance ?? defaultPreferences.neck.shouldPlayOnAdvance,
-  };
-}
-
 function parseScales(value: unknown): ScalesPreferences {
   const scales = (typeof value === "object" && value !== null ? value : {}) as Partial<ScalesPreferences>;
 
@@ -93,12 +68,9 @@ export function parseTrainerPreferences(raw: string): TrainerPreferences | null 
     return null;
   }
 
-  const value = data as { neck?: unknown; scales?: unknown };
+  const value = data as { scales?: unknown };
 
-  return {
-    neck: parseNeck(value.neck ?? value),
-    scales: parseScales(value.scales ?? value),
-  };
+  return { scales: parseScales(value.scales ?? value) };
 }
 
 const useTrainerPreferencesStore = createPersistedStore<TrainerPreferences>(

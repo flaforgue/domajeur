@@ -1,5 +1,4 @@
 import {
-  NATURAL_PITCH_CLASSES,
   pitchClassFromMidi,
   pitchClassName,
   type Notation,
@@ -68,29 +67,4 @@ export function canonicalStringPositionFromMidi(midi: number): StringPosition {
   }
 
   return bestMatch ?? { stringIndex: 0, fretIndex: Math.max(0, midi - lowestPlayableMidi) };
-}
-
-export function randomNote(
-  maxFret: number,
-  isNaturalsOnly: boolean,
-  avoidMidi: number | null,
-): NoteCandidate {
-  const notesPool: Note[] = [];
-  STRINGS.forEach((string, stringIndex) => {
-    for (let fretIndex = 0; fretIndex <= maxFret; fretIndex++) {
-      const midi = string.midi + fretIndex;
-      if (isNaturalsOnly && !NATURAL_PITCH_CLASSES.includes(pitchClassFromMidi(midi))) {
-        continue;
-      }
-
-      notesPool.push({ stringIndex, fretIndex, midi });
-    }
-  });
-
-  let pickedNote = notesPool[0];
-  do {
-    pickedNote = notesPool[Math.floor(Math.random() * notesPool.length)];
-  } while (notesPool.length > 1 && pickedNote.midi === avoidMidi);
-
-  return { ...pickedNote, isValidated: false };
 }

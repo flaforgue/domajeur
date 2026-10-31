@@ -2,12 +2,9 @@ import { describe, it, expect } from "vitest";
 import {
   canonicalStringPositionFromMidi,
   fretText,
-  randomNote,
   stringName,
   stringPositionsForMidi,
 } from "./guitar";
-
-const naturalPitchClasses = new Set([0, 2, 4, 5, 7, 9, 11]);
 
 describe("guitar.ts", () => {
   describe("stringName", () => {
@@ -51,30 +48,6 @@ describe("guitar.ts", () => {
     it("reaches the notes above the 12th fret on the high E string", () => {
       expect(canonicalStringPositionFromMidi(77)).toEqual({ stringIndex: 5, fretIndex: 13 });
       expect(canonicalStringPositionFromMidi(81)).toEqual({ stringIndex: 5, fretIndex: 17 });
-    });
-  });
-
-  describe("randomNote", () => {
-    it("stays within fret bounds and is never pre-validated", () => {
-      for (let i = 0; i < 200; i++) {
-        const note = randomNote(7, false, null);
-        expect(note.fretIndex).toBeGreaterThanOrEqual(0);
-        expect(note.fretIndex).toBeLessThanOrEqual(7);
-        expect(note.isValidated).toBe(false);
-      }
-    });
-
-    it("only yields natural notes when naturals-only is set", () => {
-      for (let i = 0; i < 200; i++) {
-        const note = randomNote(7, true, null);
-        expect(naturalPitchClasses.has(note.midi % 12)).toBe(true);
-      }
-    });
-
-    it("avoids the given MIDI when alternatives exist", () => {
-      for (let i = 0; i < 200; i++) {
-        expect(randomNote(7, false, 45).midi).not.toBe(45);
-      }
     });
   });
 });

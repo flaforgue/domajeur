@@ -5,7 +5,7 @@ import { useMuted } from "../../hooks/useMuted";
 import { useSpacebar } from "../../hooks/useSpacebar";
 import { useWakeLock } from "../../hooks/useWakeLock";
 import { frequencyFromMidi } from "../../lib/music/notation";
-import { MAX_PLAYABLE_FRET, randomNote, stringPositionsForMidi } from "../../lib/music/guitar";
+import { MAX_PLAYABLE_FRET, stringPositionsForMidi } from "../../lib/music/guitar";
 import { scaleSeriesFromState, type ScaleSelectorState } from "../../lib/music/scaleSelection";
 import { useLatest } from "../../hooks/useLatest";
 import { useTimeout } from "../../hooks/useTimeout";
@@ -31,14 +31,13 @@ export function Scales() {
   const { engine, isStarted } = usePitch();
   const [isMuted] = useMuted();
   useWakeLock(isStarted);
-  const { state, dispatch, scaleState, setScaleState } = useTrainerState("scale");
+  const { state, dispatch, scaleState, setScaleState } = useTrainerState();
   const confettiRef = useRef<ConfettiHandle>(null);
   const noteNameRef = useRef<HTMLDivElement>(null);
 
   const currentNote = state.currentIndex >= 0 ? state.notes[state.currentIndex] : null;
   const isFirstPosition = scaleState.octaves === 1 && !scaleState.isClosedPosition;
   const isCheckVisible = state.uiState === "success" || state.uiState === "flash";
-  const lastMidi = state.notes[state.notes.length - 1]?.midi ?? null;
 
   const altPositions = currentNote === null
     ? []
@@ -73,7 +72,7 @@ export function Scales() {
 
   function applyScale(scale = scaleState): void {
     scalePlayback.stop();
-    dispatch({ type: "selectMode", mode: "scale", series: scaleSeriesFromState(scale) });
+    dispatch({ type: "loadSeries", series: scaleSeriesFromState(scale) });
   }
 
   function changeScale(next: ScaleSelectorState) {
@@ -82,11 +81,11 @@ export function Scales() {
   }
 
   function advanceToNextNote() {
-    dispatch({ type: "advance", candidate: randomNote(state.fretMax, state.isNaturalsOnly, lastMidi) });
+    dispatch({ type: "advance" });
   }
 
   function selectNextNote() {
-    dispatch({ type: "selectNext", candidate: randomNote(state.fretMax, state.isNaturalsOnly, lastMidi) });
+    dispatch({ type: "selectNext" });
   }
 
   const noteToPlayRef = useLatest(!isMuted && currentNote !== null && !currentNote.isValidated ? currentNote : null);

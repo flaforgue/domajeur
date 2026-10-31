@@ -2,7 +2,7 @@ import { Route, Routes } from "react-router-dom";
 import { HelpTooltip } from "./components/HelpTooltip";
 import { Navbar } from "./components/navbar/Navbar";
 import { Scales } from "./pages/trainer/Scales.page";
-import { Neck } from "./pages/trainer/Neck.page";
+import { Neck } from "./pages/neck/Neck.page";
 import { Accords } from "./pages/accords/Accords.page";
 import { Tuner } from "./pages/tuner/Tuner.page";
 import { Metronome } from "./pages/metronome/Metronome.page";

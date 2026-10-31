@@ -5,12 +5,6 @@ import { parseTrainerPreferences } from "./useTrainerPreferences";
 describe("parseTrainerPreferences", () => {
   it("round-trips a fully populated payload", () => {
     expect(parseTrainerPreferences(serialized())).toEqual({
-      neck: {
-        isNaturalsOnly: false,
-        fretMax: 7,
-        shouldAutoAdvance: false,
-        shouldPlayOnAdvance: false,
-      },
       scales: {
         shouldAutoAdvance: true,
         scale: {
@@ -34,12 +28,6 @@ describe("parseTrainerPreferences", () => {
 
   it("falls back to defaults for missing fields", () => {
     expect(parseTrainerPreferences("{}")).toEqual({
-      neck: {
-        isNaturalsOnly: true,
-        fretMax: 12,
-        shouldAutoAdvance: true,
-        shouldPlayOnAdvance: true,
-      },
       scales: {
         shouldAutoAdvance: true,
         scale: DEFAULT_SCALE_STATE,
@@ -58,12 +46,6 @@ describe("parseTrainerPreferences", () => {
     });
 
     expect(parseTrainerPreferences(legacy)).toEqual({
-      neck: {
-        isNaturalsOnly: false,
-        fretMax: 5,
-        shouldAutoAdvance: false,
-        shouldPlayOnAdvance: true,
-      },
       scales: {
         shouldAutoAdvance: false,
         scale: { ...DEFAULT_SCALE_STATE, rootIndex: 3, quality: "minor" },
@@ -80,12 +62,6 @@ describe("parseTrainerPreferences", () => {
 
 function serialized(scales: Record<string, unknown> = {}): string {
   return JSON.stringify({
-    neck: {
-      isNaturalsOnly: false,
-      fretMax: 7,
-      shouldAutoAdvance: false,
-      shouldPlayOnAdvance: false,
-    },
     scales: {
       shouldAutoAdvance: true,
       scale: {
