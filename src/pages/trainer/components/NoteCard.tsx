@@ -17,6 +17,7 @@ interface Props {
   altPositions: StringPosition[];
   maxFret: number;
   extra?: ReactNode;
+  cornerHint?: ReactNode;
   onReplay: () => void;
 }
 
@@ -29,6 +30,7 @@ export function NoteCard({
   altPositions,
   maxFret,
   extra,
+  cornerHint,
   onReplay,
 }: Props) {
   const isSolutionVisible = isSolutionShown && note !== null;
@@ -52,6 +54,17 @@ export function NoteCard({
         paddingClass,
       )}
     >
+      {cornerHint !== undefined && (
+        <div
+          className={`
+            absolute
+            top-4
+            right-4
+          `}
+        >
+          {cornerHint}
+        </div>
+      )}
       <div
         key={isSolutionVisible ? "solution" : "note"}
         className={`

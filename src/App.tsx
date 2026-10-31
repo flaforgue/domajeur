@@ -1,7 +1,9 @@
 import { Route, Routes } from "react-router-dom";
 import { HelpTooltip } from "./components/HelpTooltip";
 import { Navbar } from "./components/navbar/Navbar";
-import { Trainer } from "./pages/trainer/Trainer.page";
+import { Scales } from "./pages/trainer/Scales.page";
+import { Neck } from "./pages/trainer/Neck.page";
+import { Accords } from "./pages/accords/Accords.page";
 import { Tuner } from "./pages/tuner/Tuner.page";
 import { Metronome } from "./pages/metronome/Metronome.page";
 
@@ -18,7 +20,9 @@ export default function App() {
         `}
       >
         <Routes>
-          <Route path="/" element={<Trainer />} />
+          <Route path="/" element={<Scales />} />
+          <Route path="/manche" element={<Neck />} />
+          <Route path="/accords" element={<Accords />} />
           <Route path="/accordeur" element={<Tuner />} />
           <Route path="/metronome" element={<Metronome />} />
         </Routes>

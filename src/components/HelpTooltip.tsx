@@ -1,17 +1,23 @@
+import type { ReactNode } from "react";
 import { Tooltip } from "react-tooltip";
 
 export const HELP_TOOLTIP_ID = "help";
 
 const isHoverCapable = window.matchMedia("(hover: hover)").matches;
 
-export function HelpTooltip() {
+interface Props {
+  id?: string;
+  children?: ReactNode;
+}
+
+export function HelpTooltip({ id = HELP_TOOLTIP_ID, children }: Props) {
   if (!isHoverCapable) {
     return null;
   }
 
   return (
     <Tooltip
-      id={HELP_TOOLTIP_ID}
+      id={id}
       portalRoot={document.body}
       style={{
         maxWidth: "16rem",
@@ -25,6 +31,8 @@ export function HelpTooltip() {
         lineHeight: "1rem",
         boxShadow: "0 10px 30px rgba(0, 0, 0, 0.55)",
       }}
-    />
+    >
+      {children}
+    </Tooltip>
   );
 }

@@ -6,27 +6,39 @@ import {
   SCALE_ROOTS,
   type ScaleSelectorState,
 } from "../../lib/music/scaleSelection";
-import { INITIAL_TRAINER_STATE, type TrainerMode } from "./trainerReducer";
+import { INITIAL_TRAINER_STATE } from "./trainerReducer";
 
-export interface TrainerPreferences {
-  mode: TrainerMode;
+interface NeckPreferences {
   isNaturalsOnly: boolean;
   fretMax: number;
   shouldAutoAdvance: boolean;
   shouldPlayOnAdvance: boolean;
+}
+
+interface ScalesPreferences {
+  shouldAutoAdvance: boolean;
   scale: ScaleSelectorState;
 }
 
+export interface TrainerPreferences {
+  neck: NeckPreferences;
+  scales: ScalesPreferences;
+}
+
 const defaultPreferences: TrainerPreferences = {
-  mode: INITIAL_TRAINER_STATE.mode,
-  isNaturalsOnly: INITIAL_TRAINER_STATE.isNaturalsOnly,
-  fretMax: INITIAL_TRAINER_STATE.fretMax,
-  shouldAutoAdvance: INITIAL_TRAINER_STATE.shouldAutoAdvance,
-  shouldPlayOnAdvance: INITIAL_TRAINER_STATE.shouldPlayOnAdvance,
-  scale: DEFAULT_SCALE_STATE,
+  neck: {
+    isNaturalsOnly: INITIAL_TRAINER_STATE.isNaturalsOnly,
+    fretMax: INITIAL_TRAINER_STATE.fretMax,
+    shouldAutoAdvance: INITIAL_TRAINER_STATE.shouldAutoAdvance,
+    shouldPlayOnAdvance: INITIAL_TRAINER_STATE.shouldPlayOnAdvance,
+  },
+  scales: {
+    shouldAutoAdvance: INITIAL_TRAINER_STATE.shouldAutoAdvance,
+    scale: DEFAULT_SCALE_STATE,
+  },
 };
 
-function parseScale(value: unknown): ScaleSelectorState {
+function parseScaleState(value: unknown): ScaleSelectorState {
   if (typeof value !== "object" || value === null) {
     return DEFAULT_SCALE_STATE;
   }
@@ -49,6 +61,26 @@ function parseScale(value: unknown): ScaleSelectorState {
   });
 }
 
+function parseNeck(value: unknown): NeckPreferences {
+  const neck = (typeof value === "object" && value !== null ? value : {}) as Partial<NeckPreferences>;
+
+  return {
+    isNaturalsOnly: neck.isNaturalsOnly ?? defaultPreferences.neck.isNaturalsOnly,
+    fretMax: neck.fretMax ?? defaultPreferences.neck.fretMax,
+    shouldAutoAdvance: neck.shouldAutoAdvance ?? defaultPreferences.neck.shouldAutoAdvance,
+    shouldPlayOnAdvance: neck.shouldPlayOnAdvance ?? defaultPreferences.neck.shouldPlayOnAdvance,
+  };
+}
+
+function parseScales(value: unknown): ScalesPreferences {
+  const scales = (typeof value === "object" && value !== null ? value : {}) as Partial<ScalesPreferences>;
+
+  return {
+    shouldAutoAdvance: scales.shouldAutoAdvance ?? defaultPreferences.scales.shouldAutoAdvance,
+    scale: parseScaleState(scales.scale),
+  };
+}
+
 export function parseTrainerPreferences(raw: string): TrainerPreferences | null {
   let data: unknown;
   try {
@@ -61,15 +93,11 @@ export function parseTrainerPreferences(raw: string): TrainerPreferences | null 
     return null;
   }
 
-  const value = data as Partial<TrainerPreferences>;
+  const value = data as { neck?: unknown; scales?: unknown };
 
   return {
-    mode: value.mode === "scale" ? "scale" : "free",
-    isNaturalsOnly: value.isNaturalsOnly ?? defaultPreferences.isNaturalsOnly,
-    fretMax: value.fretMax ?? defaultPreferences.fretMax,
-    shouldAutoAdvance: value.shouldAutoAdvance ?? defaultPreferences.shouldAutoAdvance,
-    shouldPlayOnAdvance: value.shouldPlayOnAdvance ?? defaultPreferences.shouldPlayOnAdvance,
-    scale: parseScale(value.scale),
+    neck: parseNeck(value.neck ?? value),
+    scales: parseScales(value.scales ?? value),
   };
 }
 

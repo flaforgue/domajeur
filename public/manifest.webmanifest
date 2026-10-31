@@ -1,7 +1,7 @@
 {
   "name": "Do Majeur",
   "short_name": "Do Majeur",
-  "description": "Accordeur, métronome et apprentissages des notes et gammes à la guitare.",
+  "description": "Accordeur, métronome, dictionnaire d'accords et apprentissage des notes et gammes à la guitare.",
   "lang": "fr",
   "start_url": "/",
   "scope": "/",

@@ -74,7 +74,9 @@ export function FreeModeSettings({
         Notes naturelles
       </ToggleSwitch>
       <ToggleSwitch isChecked={shouldAutoAdvance} onChange={onAutoAdvanceChange}>
-        Enchaînement auto
+        <HintedLabel hint="Passe automatiquement à la note suivante dès que la note jouée est validée au micro.">
+          Enchaînement auto
+        </HintedLabel>
       </ToggleSwitch>
       <ToggleSwitch isChecked={shouldPlayOnAdvance} onChange={onPlayOnAdvanceChange}>
         <HintedLabel hint="Joue la note de référence quand l'enchaînement automatique passe à la note suivante.">

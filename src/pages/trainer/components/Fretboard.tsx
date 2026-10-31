@@ -5,11 +5,20 @@ interface Props {
   altPositions?: StringPosition[];
   scaleNotes?: ScaleMarker[];
   maxFret: number;
+  hasFingerNumbers?: boolean;
 }
 
 const stringCount = 6;
 
-export function Fretboard({ pos, altPositions = [], scaleNotes = [], maxFret }: Props) {
+function fingerMarkerRadius(scaleNote: ScaleMarker, hasFingerNumbers: boolean): number {
+  if (!hasFingerNumbers) {
+    return scaleNote.isRoot ? 7 : 5.5;
+  }
+
+  return scaleNote.isRoot ? 9 : 8;
+}
+
+export function Fretboard({ pos, altPositions = [], scaleNotes = [], maxFret, hasFingerNumbers = false }: Props) {
   const frets = Math.max(5, maxFret);
   const paddingLeft = 34;
   const paddingRight = 18;
@@ -88,24 +97,52 @@ export function Fretboard({ pos, altPositions = [], scaleNotes = [], maxFret }: 
           {f}
         </text>
       ))}
-      {scaleNotes.map((scaleNote) => (
-        <circle
-          key={`scale-${scaleNote.stringIndex}-${scaleNote.fretIndex}`}
-          cx={markerX(scaleNote)}
-          cy={markerY(scaleNote)}
-          r={scaleNote.isRoot ? 7 : 5.5}
-          strokeWidth={1.5}
-          className={scaleNote.isRoot
-            ? `
-              fill-clay
-              stroke-clay
-            `
-            : `
-              fill-pearl-faint/25
-              stroke-pearl-faint/50
-            `}
-        />
-      ))}
+      {scaleNotes.map((scaleNote) => {
+        if (hasFingerNumbers && scaleNote.fretIndex === 0) {
+          return (
+            <circle
+              key={`scale-${scaleNote.stringIndex}-${scaleNote.fretIndex}`}
+              cx={markerX(scaleNote)}
+              cy={markerY(scaleNote)}
+              r={8}
+              strokeWidth={1.5}
+              className={scaleNote.isRoot
+                ? `
+                  fill-none
+                  stroke-clay
+                `
+                : `
+                  fill-none
+                  stroke-pearl-faint
+                `}
+            />
+          );
+        }
+
+        return (
+          <circle
+            key={`scale-${scaleNote.stringIndex}-${scaleNote.fretIndex}`}
+            cx={markerX(scaleNote)}
+            cy={markerY(scaleNote)}
+            r={fingerMarkerRadius(scaleNote, hasFingerNumbers)}
+            strokeWidth={1.5}
+            className={scaleNote.isRoot
+              ? `
+                fill-clay
+                stroke-clay
+              `
+              : hasFingerNumbers
+                ? `
+                  fill-pearl-dim
+                  stroke-pearl-dim
+                `
+                : `
+                  fill-pearl-faint/25
+                  stroke-pearl-faint/50
+                `}
+          />
+        );
+      })}
       {altPositions.map((altPosition) => (
         <circle
           key={`alt-${altPosition.stringIndex}-${altPosition.fretIndex}`}
@@ -138,6 +175,23 @@ export function Fretboard({ pos, altPositions = [], scaleNotes = [], maxFret }: 
           transform-fill
         `}
       />
+      {hasFingerNumbers && scaleNotes.filter((scaleNote) => scaleNote.fretIndex > 0).map((scaleNote) => (
+        <text
+          key={`finger-${scaleNote.stringIndex}-${scaleNote.fretIndex}`}
+          x={markerX(scaleNote)}
+          y={markerY(scaleNote)}
+          textAnchor="middle"
+          dominantBaseline="central"
+          fontSize={10}
+          className={`
+            fill-ebony
+            font-mono
+            font-semibold
+          `}
+        >
+          {scaleNote.fretIndex}
+        </text>
+      ))}
     </svg>
   );
 }

@@ -6,9 +6,10 @@ import { Fretboard } from "./Fretboard";
 interface Props {
   notes: NoteCandidate[];
   currentNote: NoteCandidate;
+  hasFingerNumbers?: boolean;
 }
 
-export function ScaleDiagram({ notes, currentNote }: Props) {
+export function ScaleDiagram({ notes, currentNote, hasFingerNumbers = false }: Props) {
   const rootPitchClass = notes.length > 0 ? pitchClassFromMidi(notes[0].midi) : -1;
   const markers = [
     ...new Map(notes.map((note) => [
@@ -30,6 +31,7 @@ export function ScaleDiagram({ notes, currentNote }: Props) {
         pos={currentNote}
         scaleNotes={markers}
         maxFret={maxFret}
+        hasFingerNumbers={hasFingerNumbers}
       />
     </Flex>
   );

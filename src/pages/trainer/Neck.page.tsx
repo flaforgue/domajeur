@@ -1,12 +1,10 @@
 import { useEffect, useRef } from "react";
-import { PlayIcon } from "lucide-react";
 import { usePitch } from "../../hooks/usePitch";
 import { useMuted } from "../../hooks/useMuted";
 import { useSpacebar } from "../../hooks/useSpacebar";
 import { useWakeLock } from "../../hooks/useWakeLock";
 import { frequencyFromMidi } from "../../lib/music/notation";
-import { MAX_PLAYABLE_FRET, randomNote, stringPositionsForMidi } from "../../lib/music/guitar";
-import { scaleSeriesFromState, type ScaleSelectorState } from "../../lib/music/scaleSelection";
+import { randomNote, stringPositionsForMidi } from "../../lib/music/guitar";
 import { useLatest } from "../../hooks/useLatest";
 import { useTimeout } from "../../hooks/useTimeout";
 import { Confetti, type ConfettiHandle } from "../../components/Confetti";
@@ -15,36 +13,29 @@ import { Button } from "../../components/buttons/Button";
 import { Panel } from "../../components/Panel";
 import { PageContainer } from "../../components/layout/PageContainer";
 import { Flex } from "../../components/layout/Flex";
-import { SegmentedControl } from "../../components/inputs/SegmentedControl";
-import { ToggleSwitch } from "../../components/inputs/ToggleSwitch";
 import { LiveReadout } from "./components/LiveReadout";
 import { FreeModeSettings } from "./components/FreeModeSettings";
-import { ScaleSelector } from "./components/ScaleSelector";
 import { NoteHistory } from "./components/NoteHistory";
 import { NoteCard } from "./components/NoteCard";
-import { ScaleDiagram } from "./components/ScaleDiagram";
 import { useNoteValidation } from "./useNoteValidation";
-import { useScalePlayback } from "./useScalePlayback";
 import { useTrainerState } from "./useTrainerState";
-import type { TrainerMode } from "./trainerReducer";
 
-export function Trainer() {
+export function Neck() {
   const { engine, isStarted } = usePitch();
   const [isMuted] = useMuted();
   useWakeLock(isStarted);
-  const { state, dispatch, scaleState, setScaleState } = useTrainerState();
+  const { state, dispatch } = useTrainerState("free");
   const confettiRef = useRef<ConfettiHandle>(null);
   const noteNameRef = useRef<HTMLDivElement>(null);
 
   const currentNote = state.currentIndex >= 0 ? state.notes[state.currentIndex] : null;
   const validatedCount = state.notes.filter((note) => note.isValidated).length;
-  const effectiveMaxFret = state.mode === "free" ? state.fretMax : MAX_PLAYABLE_FRET;
   const isCheckVisible = state.uiState === "success" || state.uiState === "flash";
   const lastMidi = state.notes[state.notes.length - 1]?.midi ?? null;
 
   const altPositions = currentNote === null
     ? []
-    : stringPositionsForMidi(currentNote.midi, effectiveMaxFret).filter(
+    : stringPositionsForMidi(currentNote.midi, state.fretMax).filter(
       (p) => !(p.stringIndex === currentNote.stringIndex && p.fretIndex === currentNote.fretIndex),
     );
 
@@ -59,32 +50,6 @@ export function Trainer() {
       playNote(currentNote.midi);
     }
   });
-
-  const scalePlayback = useScalePlayback((note, index) => {
-    playNote(note.midi);
-    dispatch({ type: "focusNote", index });
-  });
-
-  function playScale() {
-    if (isMuted) {
-      return;
-    }
-
-    scalePlayback.play(state.notes);
-  }
-
-  function applyMode(mode: TrainerMode, scale = scaleState): void {
-    scalePlayback.stop();
-    const series = mode === "scale"
-      ? scaleSeriesFromState(scale)
-      : [randomNote(state.fretMax, state.isNaturalsOnly, null)];
-    dispatch({ type: "selectMode", mode, series });
-  }
-
-  function changeScale(next: ScaleSelectorState) {
-    setScaleState(next);
-    applyMode("scale", next);
-  }
 
   function advanceToNextNote() {
     dispatch({ type: "advance", candidate: randomNote(state.fretMax, state.isNaturalsOnly, lastMidi) });
@@ -116,14 +81,18 @@ export function Trainer() {
 
   useTimeout(state.advanceDelayMs, advanceToNextNote);
 
-  function selectDefaultMode() {
-    applyMode(state.mode);
+  function startSeries() {
+    dispatch({
+      type: "selectMode",
+      mode: "free",
+      series: [randomNote(state.fretMax, state.isNaturalsOnly, null)],
+    });
   }
-  const selectDefaultModeRef = useLatest(selectDefaultMode);
-  function initializeDefaultMode() {
-    selectDefaultModeRef.current();
+  const startSeriesRef = useLatest(startSeries);
+  function initializeSeries() {
+    startSeriesRef.current();
   }
-  useEffect(initializeDefaultMode, [selectDefaultModeRef]);
+  useEffect(initializeSeries, [startSeriesRef]);
 
   const isRevisitedInAutoMode = state.uiState === "success" && state.shouldAutoAdvance;
   useNoteValidation({
@@ -168,18 +137,6 @@ export function Trainer() {
           max-md:w-full
         `}
       >
-        <SegmentedControl
-          label="Mode d'entraînement"
-          value={state.mode}
-          options={[
-            { value: "free", label: "Série libre" },
-            { value: "scale", label: "Gamme" },
-          ]}
-          onChange={(value) => {
-            applyMode(value === "free" ? "free" : "scale");
-          }}
-        />
-
         <Panel
           className={`
             flex
@@ -190,86 +147,51 @@ export function Trainer() {
             py-3.5
           `}
         >
-          {state.mode === "free"
-            ? (
-              <FreeModeSettings
-                isNaturalsOnly={state.isNaturalsOnly}
-                onNaturalsOnlyChange={(isChecked) => {
-                  dispatch({ type: "setNaturalsOnly", isOn: isChecked, candidate: randomNote(state.fretMax, isChecked, lastMidi) });
-                }}
-                fretMax={state.fretMax}
-                onFretMaxChange={(value) => {
-                  dispatch({ type: "setFretMax", value, candidate: randomNote(value, state.isNaturalsOnly, lastMidi) });
-                }}
-                shouldAutoAdvance={state.shouldAutoAdvance}
-                onAutoAdvanceChange={(isChecked) => {
-                  dispatch({ type: "setAutoAdvance", isOn: isChecked });
-                }}
-                shouldPlayOnAdvance={state.shouldPlayOnAdvance}
-                onPlayOnAdvanceChange={(isChecked) => {
-                  dispatch({ type: "setPlayOnAdvance", isOn: isChecked });
-                }}
-              />
-            )
-            : (
-              <>
-                <ScaleSelector state={scaleState} onChange={changeScale} />
-                <ToggleSwitch
-                  isChecked={state.shouldAutoAdvance}
-                  onChange={(isChecked) => {
-                    dispatch({ type: "setAutoAdvance", isOn: isChecked });
-                  }}
-                >
-                  Enchaînement auto
-                </ToggleSwitch>
-              </>
-            )}
+          <FreeModeSettings
+            isNaturalsOnly={state.isNaturalsOnly}
+            onNaturalsOnlyChange={(isChecked) => {
+              dispatch({ type: "setNaturalsOnly", isOn: isChecked, candidate: randomNote(state.fretMax, isChecked, lastMidi) });
+            }}
+            fretMax={state.fretMax}
+            onFretMaxChange={(value) => {
+              dispatch({ type: "setFretMax", value, candidate: randomNote(value, state.isNaturalsOnly, lastMidi) });
+            }}
+            shouldAutoAdvance={state.shouldAutoAdvance}
+            onAutoAdvanceChange={(isChecked) => {
+              dispatch({ type: "setAutoAdvance", isOn: isChecked });
+            }}
+            shouldPlayOnAdvance={state.shouldPlayOnAdvance}
+            onPlayOnAdvanceChange={(isChecked) => {
+              dispatch({ type: "setPlayOnAdvance", isOn: isChecked });
+            }}
+          />
         </Panel>
 
-        {state.mode === "scale" && (
-          <Button
-            variant="ghost"
-            disabled={isMuted || state.notes.length === 0}
-            onClick={playScale}
+        <Flex
+          align="baseline"
+          gap={2}
+          className="my-2"
+        >
+          <span
             className={`
-              flex
-              items-center
-              justify-center
-              gap-2
+              font-display
+              text-3xl
+              leading-none
+              font-semibold
+              text-green
             `}
           >
-            <PlayIcon width="16" height="16" />
-            Écouter la gamme
-          </Button>
-        )}
-
-        {state.mode === "free" && (
-          <Flex
-            align="baseline"
-            gap={2}
-            className="my-2"
+            {validatedCount}
+          </span>
+          <span
+            className={`
+              text-sm
+              text-pearl-faint
+            `}
           >
-            <span
-              className={`
-                font-display
-                text-3xl
-                leading-none
-                font-semibold
-                text-green
-              `}
-            >
-              {validatedCount}
-            </span>
-            <span
-              className={`
-                text-sm
-                text-pearl-faint
-              `}
-            >
-              validées
-            </span>
-          </Flex>
-        )}
+            validées
+          </span>
+        </Flex>
 
         <NoteHistory
           notes={state.notes}
@@ -301,10 +223,7 @@ export function Trainer() {
           isReplayDisabled={currentNote === null || isMuted}
           isSolutionShown={state.isSolutionShown}
           altPositions={altPositions}
-          maxFret={effectiveMaxFret}
-          extra={state.mode === "scale" && currentNote !== null
-            ? <ScaleDiagram notes={state.notes} currentNote={currentNote} />
-            : undefined}
+          maxFret={state.fretMax}
           onReplay={() => {
             if (currentNote !== null) {
               playNote(currentNote.midi);
@@ -320,18 +239,16 @@ export function Trainer() {
         </MicGate>
 
         <Flex gap={3} className="w-full">
-          {state.mode !== "scale" && (
-            <Button
-              variant="ghost"
-              disabled={currentNote === null}
-              onClick={() => {
-                dispatch({ type: "toggleSolution" });
-              }}
-              className="flex-1"
-            >
-              {state.isSolutionShown ? "Masquer la solution" : "Voir la solution"}
-            </Button>
-          )}
+          <Button
+            variant="ghost"
+            disabled={currentNote === null}
+            onClick={() => {
+              dispatch({ type: "toggleSolution" });
+            }}
+            className="flex-1"
+          >
+            {state.isSolutionShown ? "Masquer la solution" : "Voir la solution"}
+          </Button>
           <Button
             variant="next"
             isDone={isCheckVisible}

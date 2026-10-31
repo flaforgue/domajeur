@@ -103,7 +103,7 @@ export interface PitchEngine {
   getStatus: () => PitchStatus;
   getFrame: () => Frame;
   getAudioContext: () => AudioContext | null;
-  playReference: (freq: number, dur?: number) => void;
+  playReference: (freq: number, dur?: number, peakGain?: number) => void;
 }
 
 export function createPitchEngine(): PitchEngine {
@@ -299,7 +299,7 @@ export function createPitchEngine(): PitchEngine {
     return ctx;
   }
 
-  function playReference(frequency: number, duration = 0.75): void {
+  function playReference(frequency: number, duration = 0.75, peakGain = 0.6): void {
     const audioContext = ensureAudioContext();
     if (audioContext === null) {
       return;
@@ -323,7 +323,6 @@ export function createPitchEngine(): PitchEngine {
     bodyResonance.Q.value = 1.0;
     bodyResonance.gain.value = bodyResonanceGainDb;
 
-    const peakGain = 0.6;
     const attackSeconds = 0.004;
     const releaseSeconds = 0.03;
     const gain = audioContext.createGain();

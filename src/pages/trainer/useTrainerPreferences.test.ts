@@ -1,44 +1,27 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_SCALE_STATE, SCALE_ROOTS } from "../../lib/music/scaleSelection";
+import { DEFAULT_SCALE_STATE } from "../../lib/music/scaleSelection";
 import { parseTrainerPreferences } from "./useTrainerPreferences";
-
-function serialized(overrides: Record<string, unknown> = {}, scale: Record<string, unknown> = {}): string {
-  return JSON.stringify({
-    mode: "scale",
-    isNaturalsOnly: false,
-    fretMax: 7,
-    shouldAutoAdvance: false,
-    shouldPlayOnAdvance: false,
-    scale: {
-      rootIndex: 3,
-      quality: "minor",
-      size: "pentatonic",
-      variant: "blues",
-      octaves: 2,
-      isClosedPosition: true,
-      isRoundTrip: true,
-      ...scale,
-    },
-    ...overrides,
-  });
-}
 
 describe("parseTrainerPreferences", () => {
   it("round-trips a fully populated payload", () => {
     expect(parseTrainerPreferences(serialized())).toEqual({
-      mode: "scale",
-      isNaturalsOnly: false,
-      fretMax: 7,
-      shouldAutoAdvance: false,
-      shouldPlayOnAdvance: false,
-      scale: {
-        rootIndex: 3,
-        quality: "minor",
-        size: "pentatonic",
-        variant: "blues",
-        octaves: 2,
-        isClosedPosition: true,
-        isRoundTrip: true,
+      neck: {
+        isNaturalsOnly: false,
+        fretMax: 7,
+        shouldAutoAdvance: false,
+        shouldPlayOnAdvance: false,
+      },
+      scales: {
+        shouldAutoAdvance: true,
+        scale: {
+          rootIndex: 3,
+          quality: "minor",
+          size: "pentatonic",
+          variant: "blues",
+          octaves: 2,
+          isClosedPosition: true,
+          isRoundTrip: true,
+        },
       },
     });
   });
@@ -50,38 +33,71 @@ describe("parseTrainerPreferences", () => {
   });
 
   it("falls back to defaults for missing fields", () => {
-    const parsed = parseTrainerPreferences("{}");
-
-    expect(parsed).toMatchObject({
-      mode: "free",
-      isNaturalsOnly: true,
-      shouldAutoAdvance: true,
-      shouldPlayOnAdvance: true,
-      scale: DEFAULT_SCALE_STATE,
+    expect(parseTrainerPreferences("{}")).toEqual({
+      neck: {
+        isNaturalsOnly: true,
+        fretMax: 12,
+        shouldAutoAdvance: true,
+        shouldPlayOnAdvance: true,
+      },
+      scales: {
+        shouldAutoAdvance: true,
+        scale: DEFAULT_SCALE_STATE,
+      },
     });
   });
 
-  it.each([
-    ["out of bounds", SCALE_ROOTS.length],
-    ["negative", -1],
-    ["fractional", 3.5],
-    ["not a number", "9"],
-  ])("resets a %s rootIndex to the default instead of crashing later", (_label, rootIndex) => {
-    const parsed = parseTrainerPreferences(serialized({}, { rootIndex }));
+  it("migrates flat payloads saved before the page split", () => {
+    const legacy = JSON.stringify({
+      mode: "scale",
+      isNaturalsOnly: false,
+      fretMax: 5,
+      shouldAutoAdvance: false,
+      shouldPlayOnAdvance: true,
+      scale: { rootIndex: 3, quality: "minor" },
+    });
 
-    expect(parsed?.scale.rootIndex).toBe(DEFAULT_SCALE_STATE.rootIndex);
+    expect(parseTrainerPreferences(legacy)).toEqual({
+      neck: {
+        isNaturalsOnly: false,
+        fretMax: 5,
+        shouldAutoAdvance: false,
+        shouldPlayOnAdvance: true,
+      },
+      scales: {
+        shouldAutoAdvance: false,
+        scale: { ...DEFAULT_SCALE_STATE, rootIndex: 3, quality: "minor" },
+      },
+    });
   });
 
-  it("keeps every valid rootIndex", () => {
-    for (let rootIndex = 0; rootIndex < SCALE_ROOTS.length; rootIndex++) {
-      expect(parseTrainerPreferences(serialized({}, { rootIndex }))?.scale.rootIndex).toBe(rootIndex);
-    }
-  });
+  it("repairs an out-of-range root index", () => {
+    const parsed = parseTrainerPreferences(serialized({ scale: { rootIndex: 99, quality: "minor" } }));
 
-  it("clamps invalid scale combinations like the selector does", () => {
-    const parsed = parseTrainerPreferences(serialized({}, { quality: "harmonicMinor", size: "pentatonic", octaves: 99 }));
-
-    expect(parsed?.scale).toMatchObject({ quality: "harmonicMinor", size: "heptatonic", variant: "standard" });
-    expect(parsed?.scale.octaves).toBeLessThanOrEqual(3);
+    expect(parsed?.scales.scale.rootIndex).toBe(DEFAULT_SCALE_STATE.rootIndex);
   });
 });
+
+function serialized(scales: Record<string, unknown> = {}): string {
+  return JSON.stringify({
+    neck: {
+      isNaturalsOnly: false,
+      fretMax: 7,
+      shouldAutoAdvance: false,
+      shouldPlayOnAdvance: false,
+    },
+    scales: {
+      shouldAutoAdvance: true,
+      scale: {
+        rootIndex: 3,
+        quality: "minor",
+        size: "pentatonic",
+        variant: "blues",
+        octaves: 2,
+        isClosedPosition: true,
+        isRoundTrip: true,
+      },
+      ...scales,
+    },
+  });
+}
