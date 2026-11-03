@@ -1,22 +1,34 @@
 import { cn } from "../lib/cn";
 import { clamp } from "../lib/math";
-import { Flex } from "./layout/Flex";
 
 interface Props {
   label: string;
   value: number; // 0..1
   fillClassName: string;
+  isStacked?: boolean;
 }
 
-export function Meter({ label, value, fillClassName }: Props) {
+export function Meter({ label, value, fillClassName, isStacked = false }: Props) {
   const percent = Math.round(clamp(value, 0, 1) * 100);
 
   return (
-    <Flex align="center" gap={2.5}>
+    <div
+      className={cn(
+        `
+          grid
+          items-center
+          gap-x-2.5
+        `,
+        isStacked
+          ? `
+            grid-cols-[1fr_auto]
+            gap-y-1.5
+          `
+          : "grid-cols-[7rem_1fr_3rem]",
+      )}
+    >
       <span
         className={`
-          w-28
-          shrink-0
           text-xs
           text-pearl-faint
         `}
@@ -24,13 +36,15 @@ export function Meter({ label, value, fillClassName }: Props) {
         {label}
       </span>
       <div
-        className={`
+        className={cn(`
           h-2
-          flex-1
           overflow-hidden
           rounded-sm
           bg-ebony-3
-        `}
+        `, isStacked && `
+          col-span-2
+          row-start-2
+        `)}
       >
         <div
           className={cn(`
@@ -45,8 +59,6 @@ export function Meter({ label, value, fillClassName }: Props) {
       </div>
       <span
         className={`
-          w-12
-          shrink-0
           text-right
           font-mono
           text-xs
@@ -57,6 +69,6 @@ export function Meter({ label, value, fillClassName }: Props) {
         {" "}
         %
       </span>
-    </Flex>
+    </div>
   );
 }

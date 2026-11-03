@@ -1,12 +1,18 @@
-import { useState } from "react";
 import { useNotation } from "../../hooks/useNotation";
+import { usePitch } from "../../hooks/usePitch";
+import { useWakeLock } from "../../hooks/useWakeLock";
 import { STRINGS, stringName } from "../../lib/music/guitar";
 import { NATURAL_PITCH_CLASSES, pitchClassName } from "../../lib/music/notation";
 import { Checkbox } from "../../components/inputs/Checkbox";
+import { MicGate } from "../../components/MicGate";
 import { Panel } from "../../components/Panel";
 import { SectionTitle } from "../../components/SectionTitle";
 import { PageContainer } from "../../components/layout/PageContainer";
+import { HeardNote } from "./components/HeardNote";
 import { NeckDiagram } from "./components/NeckDiagram";
+import { isPositionHighlighted, NATURAL_NECK_POSITIONS } from "./neckPositions";
+import { useNeckPreferences } from "./useNeckPreferences";
+import { useRecognizedNote } from "./useRecognizedNote";
 
 function toggled(values: number[], value: number, isChecked: boolean): number[] {
   return isChecked ? [...values, value] : values.filter((checked) => checked !== value);
@@ -14,14 +20,23 @@ function toggled(values: number[], value: number, isChecked: boolean): number[] 
 
 export function Neck() {
   const [notation] = useNotation();
-  const [checkedPitchClasses, setCheckedPitchClasses] = useState<number[]>([]);
-  const [checkedStringIndexes, setCheckedStringIndexes] = useState<number[]>([]);
+  const [preferences, setPreferences] = useNeckPreferences();
+  const { checkedPitchClasses, checkedStringIndexes } = preferences;
+  const { isStarted } = usePitch();
+  useWakeLock(isStarted);
+
+  const highlightedMidis = new Set(
+    NATURAL_NECK_POSITIONS
+      .filter((position) => isPositionHighlighted(position, checkedPitchClasses, checkedStringIndexes))
+      .map(({ midi }) => midi),
+  );
+  const recognized = useRecognizedNote(highlightedMidis);
 
   return (
     <PageContainer
       className={`
         flex
-        max-w-3xl
+        max-w-4xl
         items-start
         justify-center
         gap-8
@@ -30,20 +45,53 @@ export function Neck() {
         max-md:px-4
       `}
     >
-      <NeckDiagram
-        checkedPitchClasses={checkedPitchClasses}
-        checkedStringIndexes={checkedStringIndexes}
-        notation={notation}
+      <div
         className={`
-          h-auto
+          flex
           min-w-0
           flex-1
+          flex-col-reverse
+          gap-2
 
-          md:h-[min(calc(100vh-9rem),52rem)]
-          md:w-auto
           md:flex-none
+
+          lg:flex-row
+          lg:items-start
+          lg:gap-8
         `}
-      />
+      >
+        <NeckDiagram
+          checkedPitchClasses={checkedPitchClasses}
+          checkedStringIndexes={checkedStringIndexes}
+          matchedMidi={recognized?.isMatch === true ? recognized.midi : null}
+          notation={notation}
+          className={`
+            h-auto
+            w-full
+
+            md:h-[min(calc(100vh-17rem),52rem)]
+            md:w-auto
+
+            lg:h-[min(calc(100vh-9rem),52rem)]
+          `}
+        />
+        <div
+          className={`
+            contain-inline-size
+
+            lg:order-first
+            lg:w-64
+            lg:flex-none
+          `}
+        >
+          <MicGate
+            title="Écoute au micro"
+            feature="Active le micro pour afficher la note que tu joues. Elle passe au vert si elle est mise en évidence sur le manche."
+          >
+            <HeardNote recognized={recognized} />
+          </MicGate>
+        </div>
+      </div>
 
       <aside
         className={`
@@ -59,7 +107,6 @@ export function Neck() {
       >
         <Panel
           className={`
-            mt-9
             flex
             flex-col
             gap-3
@@ -76,7 +123,10 @@ export function Neck() {
               key={pitchClass}
               isChecked={checkedPitchClasses.includes(pitchClass)}
               onChange={(isChecked) => {
-                setCheckedPitchClasses((previous) => toggled(previous, pitchClass, isChecked));
+                setPreferences({
+                  ...preferences,
+                  checkedPitchClasses: toggled(checkedPitchClasses, pitchClass, isChecked),
+                });
               }}
             >
               {pitchClassName(pitchClass, notation)}
@@ -102,7 +152,10 @@ export function Neck() {
               key={stringIndex}
               isChecked={checkedStringIndexes.includes(stringIndex)}
               onChange={(isChecked) => {
-                setCheckedStringIndexes((previous) => toggled(previous, stringIndex, isChecked));
+                setPreferences({
+                  ...preferences,
+                  checkedStringIndexes: toggled(checkedStringIndexes, stringIndex, isChecked),
+                });
               }}
             >
               {stringName(stringIndex, notation)}

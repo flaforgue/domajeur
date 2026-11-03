@@ -1,48 +1,24 @@
-import { detectedNoteFromFrame } from "../../lib/pitch/detectedNote";
+import { createNoteRecognizer } from "../../lib/pitch/noteRecognizer";
 import type { Frame } from "../../lib/pitch/pitchEngine";
 import type { NoteCandidate } from "../../lib/music/guitar";
-
-const stableHoldMs = 130;
-const minClarityToValidate = 0.85;
 
 export interface NoteValidator {
   processFrame: (frame: Frame, now: number) => boolean;
 }
 
 export function createNoteValidator(targetMidi: number): NoteValidator {
-  let stableMidi: number | null = null;
-  let stableSince = 0;
+  const recognizer = createNoteRecognizer();
   let hasValidated = false;
 
   return {
     processFrame(frame: Frame, now: number): boolean {
-      if (frame.isRefPlaying || hasValidated) {
+      if (hasValidated) {
         return false;
       }
 
-      const detected = detectedNoteFromFrame(frame);
-      if (detected === null) {
-        stableMidi = null;
+      hasValidated = recognizer.processFrame(frame, now) === targetMidi;
 
-        return false;
-      }
-
-      if (detected.midi !== stableMidi) {
-        stableMidi = detected.midi;
-        stableSince = now;
-      }
-
-      if (
-        detected.midi === targetMidi
-        && frame.clarity >= minClarityToValidate
-        && now - stableSince >= stableHoldMs
-      ) {
-        hasValidated = true;
-
-        return true;
-      }
-
-      return false;
+      return hasValidated;
     },
   };
 }

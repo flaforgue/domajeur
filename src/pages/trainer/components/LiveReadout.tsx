@@ -4,11 +4,8 @@ import type { Frame } from "../../../lib/pitch/pitchEngine";
 import { useEngineSelector } from "../../../hooks/useEngineSelector";
 import { useNotation } from "../../../hooks/useNotation";
 import { cn } from "../../../lib/cn";
-import { clamp } from "../../../lib/math";
-import { Meter } from "../../../components/Meter";
+import { InputLevelMeter } from "../../../components/InputLevelMeter";
 import { Flex } from "../../../components/layout/Flex";
-
-const maxInputRootmeanSquare = 0.1;
 
 interface Readout {
   kind: "idle" | "reference" | "note";
@@ -16,8 +13,6 @@ interface Readout {
   cents: number;
   frequency: number;
   isMatch: boolean;
-  level: number;
-  clarity: number;
 }
 
 function computeReadout(
@@ -26,15 +21,12 @@ function computeReadout(
   targetMidi: number | null,
   targetSpelling: NoteSpelling | undefined,
 ): Readout {
-  const level = Math.round(clamp(frame.rootMeanSquare / maxInputRootmeanSquare, 0, 1) * 100) / 100;
   const silent: Readout = {
     kind: "idle",
     label: "",
     cents: 0,
     frequency: 0,
     isMatch: false,
-    level,
-    clarity: 0,
   };
 
   if (frame.isRefPlaying) {
@@ -54,8 +46,6 @@ function computeReadout(
     cents: detected.cents,
     frequency: Number(frame.frequencyInHertz.toFixed(1)),
     isMatch,
-    level,
-    clarity: Math.round(frame.clarity * 100) / 100,
   };
 }
 
@@ -114,10 +104,7 @@ export function LiveReadout({ targetMidi, targetSpelling }: Props) {
           </>
         )}
       </Flex>
-      <Flex direction="col" gap={2}>
-        <Meter label="Niveau d'entrée" value={readout.level} fillClassName="bg-clay" />
-        <Meter label="Clarté" value={readout.clarity} fillClassName="bg-brass" />
-      </Flex>
+      <InputLevelMeter />
     </Flex>
   );
 }

@@ -1,24 +1,26 @@
 import { STRINGS } from "../../../lib/music/guitar";
-import {
-  namedNoteFromMidi,
-  NATURAL_PITCH_CLASSES,
-  pitchClassFromMidi,
-  type Notation,
-} from "../../../lib/music/notation";
+import { namedNoteFromMidi, type Notation } from "../../../lib/music/notation";
 import { cn } from "../../../lib/cn";
+import { isPositionHighlighted, NATURAL_NECK_POSITIONS, NECK_FRET_COUNT } from "../neckPositions";
 
 interface Props {
   checkedPitchClasses: number[];
   checkedStringIndexes: number[];
+  matchedMidi: number | null;
   notation: Notation;
   className?: string;
 }
 
-const fretCount = 12;
 const inlayFrets = [3, 5, 7, 9];
 const doubleInlayFret = 12;
 
-export function NeckDiagram({ checkedPitchClasses, checkedStringIndexes, notation, className = "" }: Props) {
+export function NeckDiagram({
+  checkedPitchClasses,
+  checkedStringIndexes,
+  matchedMidi,
+  notation,
+  className = "",
+}: Props) {
   const stringGap = 46;
   const fretGap = 50;
   const paddingLeft = 48;
@@ -30,20 +32,13 @@ export function NeckDiagram({ checkedPitchClasses, checkedStringIndexes, notatio
   const markerHeight = 22;
   const nutY = paddingTop + openRowHeight;
   const width = paddingLeft + (STRINGS.length - 1) * stringGap + paddingRight;
-  const height = nutY + fretCount * fretGap + paddingBottom;
+  const height = nutY + NECK_FRET_COUNT * fretGap + paddingBottom;
 
   const stringX = (stringIndex: number) => paddingLeft + stringIndex * stringGap;
   const fretY = (fretIndex: number) => nutY + fretIndex * fretGap;
   // Open strings sit above the nut, fretted notes in the middle of their fret.
   const markerY = (fretIndex: number) => (fretIndex === 0 ? nutY - openRowHeight / 2 : fretY(fretIndex) - fretGap / 2);
   const inlayX = (leftStringIndex: number) => stringX(leftStringIndex) + stringGap / 2;
-
-  const naturalPositions = STRINGS
-    .flatMap((string, stringIndex) => Array.from(
-      { length: fretCount + 1 },
-      (_, fretIndex) => ({ stringIndex, fretIndex, midi: string.midi + fretIndex }),
-    ))
-    .filter(({ midi }) => NATURAL_PITCH_CLASSES.includes(pitchClassFromMidi(midi)));
 
   return (
     <svg
@@ -70,7 +65,7 @@ export function NeckDiagram({ checkedPitchClasses, checkedStringIndexes, notatio
           className="fill-line-soft"
         />
       ))}
-      {Array.from({ length: fretCount + 1 }, (_, f) => (
+      {Array.from({ length: NECK_FRET_COUNT + 1 }, (_, f) => (
         <line
           key={`f${f}`}
           x1={stringX(0)}
@@ -94,12 +89,12 @@ export function NeckDiagram({ checkedPitchClasses, checkedStringIndexes, notatio
           x1={stringX(i)}
           y1={fretY(0)}
           x2={stringX(i)}
-          y2={fretY(fretCount)}
+          y2={fretY(NECK_FRET_COUNT)}
           className="stroke-pearl-faint"
           strokeWidth={0.7 + (STRINGS.length - 1 - i) * 0.22}
         />
       ))}
-      {Array.from({ length: fretCount }, (_, idx) => idx + 1).map((f) => (
+      {Array.from({ length: NECK_FRET_COUNT }, (_, idx) => idx + 1).map((f) => (
         <text
           key={`t${f}`}
           x={12}
@@ -114,11 +109,10 @@ export function NeckDiagram({ checkedPitchClasses, checkedStringIndexes, notatio
           {f}
         </text>
       ))}
-      {naturalPositions.map(({ stringIndex, fretIndex, midi }) => {
+      {NATURAL_NECK_POSITIONS.map((position) => {
+        const { stringIndex, fretIndex, midi } = position;
         const key = `${stringIndex}-${fretIndex}`;
-        const isHighlighted = checkedPitchClasses.includes(pitchClassFromMidi(midi))
-          || checkedStringIndexes.includes(stringIndex);
-        if (!isHighlighted) {
+        if (!isPositionHighlighted(position, checkedPitchClasses, checkedStringIndexes)) {
           return (
             <circle
               key={key}
@@ -138,7 +132,7 @@ export function NeckDiagram({ checkedPitchClasses, checkedStringIndexes, notatio
               width={markerWidth}
               height={markerHeight}
               rx={markerHeight / 2}
-              className="fill-brass"
+              className={midi === matchedMidi ? "fill-green" : "fill-brass"}
             />
             <text
               x={stringX(stringIndex)}

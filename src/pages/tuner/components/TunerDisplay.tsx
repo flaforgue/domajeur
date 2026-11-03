@@ -9,6 +9,7 @@ import { Flex } from "../../../components/layout/Flex";
 import { Gauge } from "./Gauge";
 import { IN_TUNE_TOLERANCE_CENTS, isInTune } from "../tuning";
 import { EnableSoundPrompt } from "../../../components/EnableSoundPrompt";
+import { InputLevelMeter } from "../../../components/InputLevelMeter";
 import { useMuted } from "../../../hooks/useMuted";
 
 type TunerView
@@ -115,6 +116,15 @@ export function TunerDisplay() {
         `}
       >
         {isActive ? `${view.frequency.toFixed(1)} Hz` : ""}
+      </div>
+
+      <div
+        className={`
+          w-full
+          max-w-sm
+        `}
+      >
+        <InputLevelMeter />
       </div>
 
       {isMuted && <EnableSoundPrompt />}
